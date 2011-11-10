@@ -571,11 +571,8 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
     return Undefined();
   }     
 
-  std::cout<<"Return Message Count: "<<count<<std::endl;
   Local<Array> resultArray = Array::New(count);
-  std::cout<<"dbus_message_iter_init "<<count<<std::endl;
   dbus_message_iter_init(message, &iter);
-  std::cout<<"dbus_message_get_type "<<count<<std::endl;
 
   //handle error
   if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR) {
@@ -585,9 +582,7 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
     }
   }
 
-  std::cout<<"dbus_message_get_type "<<count<<std::endl; 
   while ((type=dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
-    std::cerr<<"Decode message"<<std::endl;
     Handle<Value> valueItem = decode_reply_message_by_iter(&iter);
     resultArray->Set(argument_count, valueItem);
 
@@ -775,7 +770,6 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
   args[0] = arg0; 
 
   //Do call the callback
-  std::cout<<"To call the callback"<<std::endl;
   callback->Call(callback, 1, args);
 
   if (try_catch.HasCaught()) {
@@ -828,7 +822,7 @@ Handle<Value> GetSignal(Local<Object>& interface_object,
 
   AddSignalObject(container, signal_obj); 
   signal_obj->SetInternalField(0, External::New(container));
-  std::cout<<"Set the container object\n"; 
+  
   //make the signal handle weak and set the callback
   signal_obj.MakeWeak(container, dbus_signal_weak_callback);
 
@@ -1019,7 +1013,7 @@ static void prepare_cb (EV_P_ ev_prepare *w, int revents) {
   struct econtext *ctx = (struct econtext *)(((char *)w) - offsetof (struct econtext, pw));
   gint timeout;
   int i;
-
+  
   g_main_context_dispatch (ctx->gc);
 
   g_main_context_prepare (ctx->gc, &ctx->maxpri);
@@ -1093,6 +1087,7 @@ static void check_cb (EV_P_ ev_check *w, int revents) {
   if (ev_is_active (&ctx->tw))
     ev_timer_stop (EV_A &ctx->tw);
 
+  //FIXME: would block here when run in non-interactive mode, because "prepare_cb" not called
   //oops, event loop  block here, the "prepare_cb" is never called and so blocks here
   // in the interactive node, this never blocks.  but launch with "node test_method.js"
   // blocks here on "read" inside g_main_context_check
