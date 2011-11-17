@@ -8,5 +8,5 @@ To test, run the sample D-Bus service first:
 
 Then run the test script in node:
 	
-	node test_method.js
+	node examples/test_method.js
 
