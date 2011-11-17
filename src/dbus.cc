@@ -9,6 +9,7 @@
 #include <map>
 #include <iostream>
 
+#include "dbus.h"
 #include "dbus_introspect.h"
 
 using namespace v8;
@@ -1053,13 +1054,13 @@ static void prepare_cb (EV_P_ ev_prepare *w, int revents) {
         );
     iow->data = (void *)pfd;
     ev_set_priority (iow, EV_MINPRI);
-    ev_io_start (EV_A iow);
+    ev_io_start (EV_A_ iow);
   }
 
   if (timeout >= 0)
   {
     ev_timer_set (&ctx->tw, timeout * 1e-3, 0.);
-    ev_timer_start (EV_A &ctx->tw);
+    ev_timer_start (EV_A_ &ctx->tw);
   }
 }
 
@@ -1074,18 +1075,18 @@ static void check_cb (EV_P_ ev_check *w, int revents) {
     if (ev_is_pending (iow))
     {
       GPollFD *pfd = ctx->pfd + i;
-      int revents = ev_clear_pending (EV_A iow);
+      int revents = ev_clear_pending (EV_A_ iow);
 
       pfd->revents |= pfd->events &
         ((revents & EV_READ ? G_IO_IN : 0)
          | (revents & EV_WRITE ? G_IO_OUT : 0));
     }
 
-    ev_io_stop (EV_A iow);
+    ev_io_stop (EV_A_ iow);
   }
 
   if (ev_is_active (&ctx->tw))
-    ev_timer_stop (EV_A &ctx->tw);
+    ev_timer_stop (EV_A_ &ctx->tw);
 
   //FIXME: would block here when run in non-interactive mode, because "prepare_cb" not called
   //oops, event loop  block here, the "prepare_cb" is never called and so blocks here
@@ -1125,12 +1126,12 @@ init (Handle<Object> target)
   ev_prepare_init (&ctx->pw, prepare_cb);
   ev_set_priority (&ctx->pw, EV_MINPRI);
   ev_prepare_start (EV_DEFAULT_UC_ &ctx->pw);
-  ev_unref(EV_DEFAULT_UC_);
+  ev_unref(EV_DEFAULT_UC);
 
   ev_check_init (&ctx->cw, check_cb);
   ev_set_priority (&ctx->cw, EV_MAXPRI);
   ev_check_start (EV_DEFAULT_UC_ &ctx->cw);
-  ev_unref(EV_DEFAULT_UC_);
+  ev_unref(EV_DEFAULT_UC);
 
   ev_init (&ctx->tw, timer_cb);
   ev_set_priority (&ctx->tw, EV_MINPRI);
