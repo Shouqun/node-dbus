@@ -205,7 +205,6 @@ static Handle<Value> decode_reply_message_by_iter(
     case DBUS_TYPE_BOOLEAN: {
       dbus_bool_t value = false;
       dbus_message_iter_get_basic(iter, &value);
-      std::cout<<"DBUS_TYPE_BOOLEAN: "<<value<<std::endl;
       return Boolean::New(value);
       break;
     }
@@ -218,14 +217,12 @@ static Handle<Value> decode_reply_message_by_iter(
     case DBUS_TYPE_UINT64: {
       dbus_uint64_t value = 0; 
       dbus_message_iter_get_basic(iter, &value);
-      std::cout<<"DBUS_TYPE_NUMERIC: "<< value<<std::endl;
       return Integer::New(value);
       break;
     }
     case DBUS_TYPE_DOUBLE: {
       double value = 0;
       dbus_message_iter_get_basic(iter, &value);
-      std::cout<<"DBUS_TYPE_DOUBLE: "<< value<<std::endl;
       return Number::New(value);
       break;
     }
@@ -234,13 +231,11 @@ static Handle<Value> decode_reply_message_by_iter(
     case DBUS_TYPE_STRING: {
       const char *value;
       dbus_message_iter_get_basic(iter, &value); 
-      std::cout<<"DBUG_TYPE_STRING: "<<value<<std::endl;
       return String::New(value);
       break;
     }
     case DBUS_TYPE_ARRAY:
     case DBUS_TYPE_STRUCT: {
-      std::cout<<"DBUS_TYPE_ARRAY\n";
       DBusMessageIter internal_iter, internal_temp_iter;
       int count = 0;         
      
@@ -672,7 +667,6 @@ Handle<Value> DBusMethod(const Arguments& args){
 
     } else if (dbus_message_get_type(reply_message) 
                   == DBUS_MESSAGE_TYPE_METHOD_RETURN) {
-      std::cerr<<"Reply Message OK!\n";
       //method call return ok, decoe the messge to v8 Value 
       return_value = decode_reply_messages(reply_message);
 
@@ -703,7 +697,6 @@ Handle<Value> DBusMethod(const Arguments& args){
 static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
                                             DBusMessage* message,
                                             void *user_data) {
-  std::cout<<"SIGNAL FILTER"<<std::endl;
   if (message == NULL || 
         dbus_message_get_type(message) != DBUS_MESSAGE_TYPE_SIGNAL) {
     std::cout<<"Not a valid signal"<<std::endl;
@@ -988,6 +981,15 @@ Handle<Value> GetInterface(const Arguments& args) {
   return scope.Close(interface_object); 
 }
 
+//BusInit:  this MUST be called after process.nextTick to ensure 
+//  it would not block. 
+Handle<Value> BusInit(const Arguments& args)
+{
+  g_type_init();
+
+  return Undefined();
+}
+
 /// Add glib evene loop to libev
 struct econtext {
   GPollFD *pfd;
@@ -1103,15 +1105,10 @@ init (Handle<Object> target)
   HandleScope scope;
   target->Set(String::New("hello"), String::New("world"));
 
-  Local<FunctionTemplate> system_bus_t 
-    = FunctionTemplate::New(SystemBus);
-
+  NODE_SET_METHOD(target , "init", BusInit);
   NODE_SET_METHOD(target, "system_bus", SystemBus);
   NODE_SET_METHOD(target, "session_bus", SessionBus);
   NODE_SET_METHOD(target, "get_interface", GetInterface);
-
-
-  g_type_init();
 
   //add glib event loop to libev main loop in node
   GMainContext *gc     = g_main_context_default();
