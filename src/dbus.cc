@@ -9,6 +9,7 @@
 #include <map>
 #include <iostream>
 
+#include "common.h"
 #include "dbus.h"
 #include "dbus_introspect.h"
 
@@ -44,7 +45,7 @@ static DBusGConnection* GetBusFromType(DBusBusType type) {
   connection = dbus_g_bus_get(type, &error);
   if (connection == NULL)
   {
-    //std::cerr<<"Failed to open connection to bus: "<<error->message<<"\n";
+    ERROR("Failed to open connection to bus: %s\n",error->message);
     g_error_free (error);
     return connection;
   }
@@ -63,7 +64,6 @@ std::string GetSignalMatchRule(DBusSignalContainer *container) {
   
   result = container->interface + "." + container->signal;
   
-  //std::cout<<"GetSignalMatchRule:"<<result;
   return result;
 }
 
@@ -73,7 +73,6 @@ std::string GetSignalMatchRuleByString(std::string interface,
   
   result = interface + "." + signal;
   
-  //std::cout<<"GetSignalMatchRuleByString:"<<result;
   return result;
 }
 
@@ -105,7 +104,7 @@ void AddSignalObject(DBusSignalContainer *signal,
   
   SignalMap::iterator ite = g_signal_object_map.find(match_rule);
   if (ite == g_signal_object_map.end() ) {
-    std::cout<<"We are to add the signal object";
+    LOG("We are to add the signal object\n");
     g_signal_object_map.insert( make_pair(match_rule,
           signal_obj));
   }
@@ -114,7 +113,7 @@ void AddSignalObject(DBusSignalContainer *signal,
 void RemoveSignalObject(DBusSignalContainer *signal) {
   std::string match_rule = GetSignalMatchRule(signal);
   // remove the matching item from signal object map
-  std::cout<<"We are going to remove the object map item";
+  LOG("We are going to remove the object map item");
   g_signal_object_map.erase(match_rule);
 }
 
@@ -123,10 +122,9 @@ void RemoveSignalObject(DBusSignalContainer *signal) {
 ///    object,
 static void dbus_signal_weak_callback(Persistent<Value> value, 
                                       void* parameter) {
-  std::cout<<"dbus_signal_weak_callback";
+  LOG("dbus_signal_weak_callback\n");
 
   DBusSignalContainer *container = (DBusSignalContainer*) parameter;
-  std::cout<<"Get the container obejct:" ;//<< (int) container;
   if (container != NULL) {
     //Remove the matching objet map item from the map
     RemoveSignalObject(container); 
@@ -143,9 +141,8 @@ static void dbus_signal_weak_callback(Persistent<Value> value,
 ///   obect
 static void dbus_method_weak_callback(Persistent<Value> value,
                                       void* parameter) {
-  std::cout<<"dbus_method_weak_callback";
+  LOG("dbus_method_weak_callback");
   DBusMethodContainer *container = (DBusMethodContainer*) parameter;
-  std::cout<<"Get the container object:"; //<< (int) container;
   if (container != NULL)
     delete container;
 
@@ -179,7 +176,7 @@ static int dbus_messages_size(DBusMessage *message) {
   if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR) {
     const char *error_name = dbus_message_get_error_name(message);
     if (error_name != NULL) {
-      std::cerr<<"Error message: "<<error_name;
+      ERROR("Error message:%s\n ",error_name);
     }
     return 0;
   }
@@ -249,12 +246,12 @@ static Handle<Value> decode_reply_message_by_iter(
       dbus_message_iter_recurse(iter, &internal_iter);
 
       do {
-        std::cout<<"for each item\n";
+        LOG("for each item\n");
         //this is dict entry
         if (dbus_message_iter_get_arg_type(&internal_iter) 
                       == DBUS_TYPE_DICT_ENTRY) {
           //Item is dict entry, it is exactly key-value pair
-          std::cout<<"  DBUS_TYPE_DICT_ENTRY\n";
+          LOG(" DBUS_TYPE_DICT_ENTRY\n");
           DBusMessageIter dict_entry_iter;
           //The key 
           dbus_message_iter_recurse(&internal_iter, &dict_entry_iter);
@@ -279,7 +276,7 @@ static Handle<Value> decode_reply_message_by_iter(
       return resultArray;
     }
     case DBUS_TYPE_VARIANT: {
-      std::cout<<"DBUS_TYPE_VARIANT\n";
+      LOG("DBUS_TYPE_VARIANT\n");
       DBusMessageIter internal_iter;
       dbus_message_iter_recurse(iter, &internal_iter);
       
@@ -288,10 +285,10 @@ static Handle<Value> decode_reply_message_by_iter(
       return result;
     }
     case DBUS_TYPE_DICT_ENTRY: {
-      std::cout<<"DBUS_TYPE_DICT_ENTRY"<< ":should Never be here.\n";
+      ERROR("DBUS_TYPE_DICT_ENTRY: should Never be here.\n");
     }
     case DBUS_TYPE_INVALID: {
-      std::cout<<"DBUS_TYPE_INVALID\n";
+      LOG("DBUS_TYPE_INVALID\n");
     } 
     default: {
       //should return 'undefined' object
@@ -337,7 +334,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
     case DBUS_TYPE_BOOLEAN:  {
       dbus_bool_t data = value->BooleanValue();  
       if (!dbus_message_iter_append_basic(iter, DBUS_TYPE_BOOLEAN, &data)) {
-        std::cerr<<"Error append boolean\n";
+        ERROR("Error append boolean\n");
         return false;
       }
       break;
@@ -352,7 +349,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
     case DBUS_TYPE_BYTE: {
       dbus_uint64_t data = value->IntegerValue();
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
-        std::cerr<<"Error append numeric\n";
+        ERROR("Error append numeric\n");
         return false;
       }
       break; 
@@ -363,7 +360,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
       String::Utf8Value data_val(value->ToString());
       char *data = *data_val;
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
-        std::cerr<<"Error append string\n";
+        ERROR("Error append string\n");
         return false;
       }
       break;
@@ -371,7 +368,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
     case DBUS_TYPE_DOUBLE: {
       double data = value->NumberValue();
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
-        std::cerr<<"Error append double\n";
+        ERROR("Error append double\n");
         return false;
       }
       break;
@@ -382,7 +379,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
                                     == DBUS_TYPE_DICT_ENTRY) {
         //This element is a DICT type of D-Bus
         if (! value->IsObject()) {
-          std::cerr<<"Error, not a Object type for DICT_ENTRY\n";
+          ERROR("Error, not a Object type for DICT_ENTRY\n");
           return false;
         }
         Local<Object> value_object = value->ToObject();
@@ -395,7 +392,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
 
         if (!dbus_message_iter_open_container(iter, DBUS_TYPE_ARRAY,
                                 dict_sig, &subIter)) {
-          std::cerr<<"Can't open container for ARRAY-Dict type\n";
+          ERROR("Can't open container for ARRAY-Dict type\n");
           dbus_free(dict_sig); 
           return false; 
         }
@@ -415,7 +412,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
           if (!dbus_message_iter_open_container(&subIter, 
                                 DBUS_TYPE_DICT_ENTRY,
                                 NULL, &dict_iter)) {
-            std::cerr<<"  Can't open container for DICT-ENTTY\n";
+            ERROR("Can't open container for DICT-ENTTY\n");
             return false;
           }
 
@@ -448,7 +445,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
       } else {
         //This element is a Array type of D-Bus 
         if (! value->IsArray()) {
-          std::cerr<<"Error!, not a Array type for array argument";
+          ERROR("Error!, not a Array type for array argument");
           return false;
         }
         DBusMessageIter subIter;
@@ -457,11 +454,11 @@ static bool encode_to_message_with_objects(Local<Value> value,
       
         dbus_signature_iter_recurse(&siter, &arraySIter);
         array_sig = dbus_signature_iter_get_signature(&arraySIter);
-        std::cout<<"Array Signature: "<<array_sig<<"\n"; 
+        LOG("Array Signature: %s\n", array_sig); 
       
         if (!dbus_message_iter_open_container(iter, DBUS_TYPE_ARRAY, 
                                               array_sig, &subIter)) {
-          std::cerr<<"Can't open container for ARRAY type\n";
+          ERROR("Can't open container for ARRAY type\n");
           g_free(array_sig); 
           return false; 
         }
@@ -469,7 +466,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
         Local<Array> arrayData = Local<Array>::Cast(value);
         bool no_error_status = true;
         for (unsigned int i=0; i < arrayData->Length(); i++) {
-          std::cerr<<"  Argument Arrary Item:"<<i<<"\n";
+          ERROR("Argument Arrary Item:%d\n", i);
           Local<Value> arrayItem = arrayData->Get(i);
           if ( encode_to_message_with_objects(arrayItem, 
                                           &subIter, array_sig) ) {
@@ -484,19 +481,19 @@ static bool encode_to_message_with_objects(Local<Value> value,
       break;
     }
     case DBUS_TYPE_VARIANT: {
-      std::cout<<"DBUS_TYPE_VARIANT\n";
+      LOG("DBUS_TYPE_VARIANT\n");
       DBusMessageIter sub_iter;
       DBusSignatureIter var_siter;
        //FIXME: the variable stub
       char *var_sig = get_signature_from_v8_type(value);
       
-      std::cout<<" Guess the variable type is: "<<var_sig<<"\n";
+      LOG("Guess the variable type is: %s\n", var_sig);
 
       dbus_signature_iter_recurse(&siter, &var_siter);
       
       if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, 
                               var_sig, &sub_iter)) {
-        std::cout<<"Can't open contianer for VARIANT type\n";
+        ERROR("Can't open contianer for VARIANT type\n");
         return false;
       }
       
@@ -510,13 +507,13 @@ static bool encode_to_message_with_objects(Local<Value> value,
       break;
     }
     case DBUS_TYPE_STRUCT: {
-      std::cerr<<"DBUS_TYPE_STRUCT";
+      LOG("DBUS_TYPE_STRUCT");
       DBusMessageIter sub_iter;
       DBusSignatureIter struct_siter;
 
       if (!dbus_message_iter_open_container(iter, DBUS_TYPE_STRUCT, 
                               NULL, &sub_iter)) {
-        std::cerr<<"Can't open contianer for STRUCT type\n";
+        ERROR("Can't open contianer for STRUCT type\n");
         return false;
       }
       
@@ -546,7 +543,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
       return no_error_status;
     }
     default: {
-      std::cerr<<"Error! Try to append Unsupported type\n";
+      ERROR("Error! Try to append Unsupported type\n");
       return false;
     }
   }
@@ -574,7 +571,7 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
   if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR) {
     const char *error_name = dbus_message_get_error_name(message);
     if (error_name != NULL) {
-      std::cerr<<"Error message: "<<error_name<<std::endl;
+      ERROR("Error message: %s\n ",error_name);
     }
   }
 
@@ -591,14 +588,13 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
 }
 
 Handle<Value> DBusMethod(const Arguments& args){
-  std::cout<<"DBueMethod Called\n";
   
   HandleScope scope;
   Local<Value> this_data = args.Data();
   void *data = External::Unwrap(this_data);
 
   DBusMethodContainer *container= (DBusMethodContainer*) data;
-  std::cout<<"Calling method: "<<container->method<<"\n"; 
+  LOG("Calling method: %s\n", container->method); 
   
   bool no_error_status = true;
   DBusMessage *message = dbus_message_new_method_call (
@@ -619,16 +615,15 @@ Handle<Value> DBusMethod(const Arguments& args){
 
     dbus_error_init(&error);        
     if (!dbus_signature_validate(signature, &error)) {
-      std::cerr<<"Invalid signature "<<error.message<<"\n";
+      ERROR("Invalid signature: %s\n",error.message);
     }
     
     dbus_signature_iter_init(&siter, signature);
     do {
       char *arg_sig = dbus_signature_iter_get_signature(&siter);
-      std::cout<<"ARG: "<<arg_sig<<" Length:"<<args.Length() <<" Count:"<<count;
       //process the argument sig
       if (count >= args.Length()) {
-        std::cerr<<"Arguments Not Enough\n";
+        ERROR("Arguments Not Enough\n");
         break;
       }
       
@@ -663,7 +658,7 @@ Handle<Value> DBusMethod(const Arguments& args){
           message, -1, &error);
   if (reply_message != NULL) {
     if (dbus_message_get_type(reply_message) == DBUS_MESSAGE_TYPE_ERROR) {
-      std::cerr<<"Error reply message\n";
+      ERROR("Error reply message\n");
 
     } else if (dbus_message_get_type(reply_message) 
                   == DBUS_MESSAGE_TYPE_METHOD_RETURN) {
@@ -671,12 +666,12 @@ Handle<Value> DBusMethod(const Arguments& args){
       return_value = decode_reply_messages(reply_message);
 
     } else {
-      std::cerr<<"Unkonwn reply\n";
+      ERROR("Unkonwn reply\n");
     }
     //free the reply message of dbus call
     dbus_message_unref(reply_message);
   } else {
-      std::cerr<<"Error calling sync method:"<<error.message<<"\n";
+      ERROR("Error calling sync method:%s\n",error.message);
       dbus_error_free(&error);
   }
  
@@ -699,14 +694,14 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
                                             void *user_data) {
   if (message == NULL || 
         dbus_message_get_type(message) != DBUS_MESSAGE_TYPE_SIGNAL) {
-    std::cout<<"Not a valid signal"<<std::endl;
+    ERROR("Not a valid signal\n");
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
   //get the interface name and signal name
   const char *interface_str = dbus_message_get_interface(message);
   const char *signal_name_str = dbus_message_get_member(message);
   if (interface_str == NULL || signal_name_str == NULL ) {
-    std::cout<<"Not valid signal parameter"<<std::endl;
+    ERROR("Not valid signal parameter\n");
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }  
 
@@ -740,17 +735,17 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
   
   if ( callback_enabled == Undefined() 
                       || callback_v == Undefined()) {
-    std::cout<<"Callback undefined\n";
+    ERROR("Callback undefined\n");
     context.Dispose();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
   if (! callback_enabled->ToBoolean()->Value()) {
-    std::cout<<"Callback not enabled\n";
+    ERROR("Callback not enabled\n");
     context.Dispose();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
   if (! callback_v->IsFunction()) {
-    std::cout<<"The callback is not a Function\n";
+    ERROR("The callback is not a Function\n");
     context.Dispose();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
@@ -767,7 +762,7 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
   callback->Call(callback, 1, args);
 
   if (try_catch.HasCaught()) {
-    std::cout<<"Ooops, Exception on call the callback"<<std::endl;
+    ERROR("Ooops, Exception on call the callback\n");
   } 
   
   context.Dispose();
@@ -784,7 +779,7 @@ Handle<Value> GetSignal(Local<Object>& interface_object,
   HandleScope scope;
 
   if (!g_is_signal_filter_attached_ ) {
-    std::cout<<"attach signal filter\n";
+    ERROR("attach signal filter\n");
     dbus_connection_add_filter(dbus_g_connection_get_connection(connection),
                              dbus_signal_filter, NULL, NULL);
     g_is_signal_filter_attached_ = true;
@@ -796,7 +791,7 @@ Handle<Value> GetSignal(Local<Object>& interface_object,
           "type='signal'",
           &error);
   if (dbus_error_is_set (&error)) {
-    std::cout<<"Error Add match:"<<error.message<<"\n";
+    ERROR("Error Add match: %s\n",error.message);
   }
 
   //create the object

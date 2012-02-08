@@ -6,8 +6,8 @@
 #include <list>
 #include <string>
 
+#include "common.h"
 #include "dbus_introspect.h"
-
 
 
 namespace dbus_library {
@@ -31,27 +31,25 @@ Parser* ParserNew() {
 
 void ParserPrint(Parser *parser) {
   BusNode *root_node = parser->root_node;
-  printf("node\n");
+  LOG("node\n");
   std::list<BusInterface*>::iterator interface_ite;
   for (interface_ite = root_node->interfaces_.begin();
         interface_ite != root_node->interfaces_.end();
         interface_ite++) {
     BusInterface *interface = *interface_ite;
-    printf("  interface: %s\n", interface->name_.c_str());
+    LOG("  interface: %s\n", interface->name_.c_str());
     
     std::list<BusMethod*>::iterator method_ite;
     for(method_ite = interface->methods_.begin();
           method_ite != interface->methods_.end();
           method_ite++) {
       BusMethod *method = *method_ite;
-      printf("    method:%s , %s\n", method->name_.c_str(), method->signature_.c_str());
 
       std::list<BusArgument*>::iterator argument_ite;
       for(argument_ite = method->args_.begin();
             argument_ite != method->args_.end();
             argument_ite++) {
         BusArgument *argument = *argument_ite;
-        printf("      arg:%s - %s\n", argument->direction_.c_str(), argument->type_.c_str());
       }
     }
 
@@ -60,14 +58,14 @@ void ParserPrint(Parser *parser) {
           signal_ite != interface->signals_.end();
           signal_ite++) {
       BusSignal *signal = *signal_ite;
-      printf("    signal:%s\n", signal->name_.c_str());
+      LOG("    signal:%s\n", signal->name_.c_str());
 
       std::list<BusArgument*>::iterator argument_ite;
       for(argument_ite = signal->args_.begin();
             argument_ite != signal->args_.end();
             argument_ite++) {
         BusArgument *argument = *argument_ite;
-        printf("      arg:%s\n", argument->type_.c_str());
+        LOG("      arg:%s\n", argument->type_.c_str());
       }
     }
   }
@@ -137,7 +135,7 @@ static const char* GetAttribute(const char **attrs, const char *name) {
 
 static void expat_StartElementHandler(void *userData, 
               const XML_Char *name, const XML_Char **attrs) {
-  printf("Node: %s\n", name);
+  LOG("Node: %s\n", name);
   Parser *parser = reinterpret_cast<Parser*>(userData);
 
   if (!strcmp(name, "node")) {
@@ -197,7 +195,7 @@ static void expat_StartElementHandler(void *userData,
 
 static void expat_EndElementHandler(void *userData, 
               const XML_Char *name ) {
-  printf("Node: %s\n", name);
+  LOG("Node: %s\n", name);
   Parser *parser = reinterpret_cast<Parser*>(userData);
   if (!strcmp(name, "node")) { 
     parser->is_on_node = false;
@@ -231,20 +229,20 @@ Parser* ParseIntrospcect(const char *source, int size) {
               expat_EndElementHandler);
 
   if (!XML_Parse(expat, source, size, true)) {
-     {
-          enum XML_Error e;
-
-          e = XML_GetErrorCode (expat);
-          if (e == XML_ERROR_NO_MEMORY)
-            fprintf(stderr, "Not enough memory to parse XML document");
-          else
-            fprintf(stderr, "Error in D-BUS description XML, line %ld, column %ld: %s\n",
-                         XML_GetCurrentLineNumber (expat),
-                         XML_GetCurrentColumnNumber (expat),
-                         XML_ErrorString (e));
-      }
-      ParserRelease(&parser);
-      return NULL;
+    {
+      enum XML_Error e;
+      
+      e = XML_GetErrorCode (expat);
+      if (e == XML_ERROR_NO_MEMORY)
+        ERROR("Not enough memory to parse XML document");
+      else
+        ERROR("Error in D-BUS description XML, line %ld, column %ld: %s\n",
+                     XML_GetCurrentLineNumber (expat),
+                     XML_GetCurrentColumnNumber (expat),
+                     XML_ErrorString (e));
+     }
+     ParserRelease(&parser);
+     return NULL;
   }
   
   ParserPrint(parser);
@@ -277,7 +275,7 @@ BusInterface* ParserGetInterface(Parser *parser, const char *iface) {
 static char*  ReadFile(const char* name, int *len) {
   FILE *file = fopen(name, "rb");
   if (file == NULL) {
-    fprintf(stderr, "Error open file: %s: %d", name, errno);
+    ERROR("Error open file: %s: %d", name, errno);
     return NULL;
   }
 
@@ -317,20 +315,20 @@ int main(int argc, char **argv)
               expat_EndElementHandler);
 
   if (!XML_Parse(expat, content, size, true)) {
-     {
-          enum XML_Error e;
+    {
+      enum XML_Error e;
 
-          e = XML_GetErrorCode (expat);
-          if (e == XML_ERROR_NO_MEMORY)
-            fprintf(stderr, "Not enough memory to parse XML document");
-          else
-            fprintf(stderr, "Error in D-BUS description XML, line %ld, column %ld: %s\n",
-                         XML_GetCurrentLineNumber (expat),
-                         XML_GetCurrentColumnNumber (expat),
-                         XML_ErrorString (e));
-      }
+      e = XML_GetErrorCode (expat);
+      if (e == XML_ERROR_NO_MEMORY)
+        ERROR("Not enough memory to parse XML document");
+      else
+        ERROR("Error in D-BUS description XML, line %ld, column %ld: %s\n",
+                     XML_GetCurrentLineNumber (expat),
+                     XML_GetCurrentColumnNumber (expat),
+                     XML_ErrorString (e));
+    }
   }
-  printf("success\n");
+  LOG("success\n");
 
   ParserPrint(parser);
 
