@@ -1,4 +1,4 @@
-var dbus = require("../build/default/dbus.node");
+var dbus = require("dbus");
 
 process.nextTick( function() {
 
