@@ -1,0 +1,13 @@
+{
+  "name" : "node-dbus",
+  "version" : "0.0.1",
+  "author" : "Shouqun Liu <liushouqun@gmail.com>",
+  "repository" : {
+    "type" : "git",
+    "url" : "git://github.com/Shouqun/node-dbus.git"
+  },
+  "main" : "./lib/dbus",
+  "scripts" : {
+    "install" : "node-waf cofigure build install"
+  }
+}
