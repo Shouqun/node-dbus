@@ -8,6 +8,6 @@
   },
   "main" : "./lib/dbus",
   "scripts" : {
-    "install" : "node-waf cofigure build install"
+    "install" : "node-waf configure build install"
   }
 }
