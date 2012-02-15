@@ -1,4 +1,4 @@
-var dbus = require("dbus");
+var dbus = require("../lib/dbus");
 
 process.nextTick( function() {
 
