@@ -3,8 +3,7 @@ var dbus = require("../lib/dbus");
 var dbusConnection = dbus.createConnection("session", 
                        "org.freedesktop.DBus.TestSuitePythonService", 
                        "/org/freedesktop/DBus/TestSuitePythonObject",
-                       "org.freedesktop.DBus.TestSuiteInterface",
-                       function () { console.log("x11");} );
+                       "org.freedesktop.DBus.TestSuiteInterface");
 
 process.nextTick(function() {
   console.log("xxxx");

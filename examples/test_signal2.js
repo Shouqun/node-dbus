@@ -3,8 +3,7 @@ var dbus = require("../lib/dbus");
 var dbusConnection = dbus.createConnection("session",
                           "org.designfu.TestService",
                           "/org/designfu/TestService/object",
-                          "org.designfu.TestService",
-                          function() {console.log("x11")});
+                          "org.designfu.TestService");
 
 process.nextTick(function() {
   console.log("xxx"); 
