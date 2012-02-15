@@ -1,13 +1,13 @@
 var dbus = require("../lib/dbus");
 
 var dbusConnection = dbus.createConnection("session",
-                          "org.designfu.TestService",
-                          "/org/designfu/TestService/object",
-                          "org.designfu.TestService");
+                          "com.example.TestService",
+                          "/com/example/TestService/object",
+                          "com.example.TestService");
 
 process.nextTick(function() {
-  console.log("xxx"); 
-  console.log(dbusConnection.interface);
+  console.log("Start"); 
+  //console.log(dbusConnection.interface);
   
   dbusConnection.on("HelloSignal", function(args) { console.log("HelloSignal"); console.log(args); });
 

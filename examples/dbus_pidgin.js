@@ -1,4 +1,4 @@
-var dbus = require('./build/default/dbus.node');
+var dbus = require('../lib/dbus');
 
 process.nextTick( function () {
   console.log("start pidgin session");

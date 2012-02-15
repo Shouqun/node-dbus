@@ -7,9 +7,9 @@ dbus.start( function() {
   dbus.init();
 
   session = dbus.session_bus();
-  interface = dbus.get_interface(session, "org.designfu.TestService", "/org/designfu/TestService/object", "org.designfu.TestService")
+  interface = dbus.get_interface(session, "com.example.TestService", "/com/example/TestService/object", "com.example.TestService")
   
-  interface.HelloSignal.onemit= function(args) { console.log("xxxx");  console.log(args)}
+  interface.HelloSignal.onemit= function(args) { console.log("Receive Signal");  console.log(args)}
   interface.HelloSignal.enabled = true;
   
   interface.emitHelloSignal();
