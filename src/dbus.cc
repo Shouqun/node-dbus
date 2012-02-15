@@ -1089,7 +1089,8 @@ static void check_cb (EV_P_ ev_check *w, int revents) {
   //oops, event loop  block here, the "prepare_cb" is never called and so blocks here
   // in the interactive node, this never blocks.  but launch with "node test_method.js"
   // blocks here on "read" inside g_main_context_check
-  g_main_context_check (ctx->gc, ctx->maxpri, ctx->pfd, ctx->nfd);
+  if (ctx->nfd)
+    g_main_context_check (ctx->gc, ctx->maxpri, ctx->pfd, ctx->nfd);
 }
 
 static struct econtext default_context;
