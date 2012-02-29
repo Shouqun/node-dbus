@@ -1,7 +1,7 @@
 {
   "name" : "dbus",
   "version" : "0.0.2",
-  "description": "A D-Bus binding for Node"
+  "description": "A D-Bus binding for Node",
   "author" : "Shouqun Liu <liushouqun@gmail.com>",
   "repository" : {
     "type" : "git",
