@@ -1,12 +1,22 @@
-D-Bus support for node.  To build, do:
+D-Bus support for node.  
+
+To build, do:
 
 	node-waf configure build
 
-To test, run the sample D-Bus service first:
+To test method call, run the sample D-Bus service first:
 
 	python examples/test-service.py
 
 Then run the test script in node:
 	
 	node examples/test_method.js
+
+To test signal receipt, run the sample D-Bus signal service first:
+	
+	python examples/example-signal-emitter.py
+
+Then run the test script in node:
+	
+	node examples/test_signal2.js
 
