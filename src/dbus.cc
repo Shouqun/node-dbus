@@ -564,9 +564,6 @@ static bool encode_to_message_with_objects(Local<Value> value,
 ///  viewport, the type is Array([])
 static Handle<Value> decode_reply_messages(DBusMessage *message) {
   DBusMessageIter iter;
-  DBusMessageIter internal_iter;
-  int type;
-  int argument_count = 0;
   int count;
 
   if ((count=dbus_messages_size(message)) <=0 ) {
@@ -583,26 +580,7 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
     }
   }
 
-  // Get the first message for getting type
-  dbus_message_iter_recurse(&iter, &internal_iter);
-  if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_DICT_ENTRY) {
-    /* do not wrap array if it is object */
-    Handle<Value> resultObject = decode_reply_message_by_iter(&iter);
-    return resultObject;
-  } else {
-    Local<Array> resultArray = Array::New(count);
-
-    while ((type=dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
-      Handle<Value> valueItem = decode_reply_message_by_iter(&iter);
-      resultArray->Set(argument_count, valueItem);
-
-      //for next message
-      dbus_message_iter_next (&iter);
-      argument_count++;
-    } //end of while loop
-  
-    return resultArray; 
-  }
+  return decode_reply_message_by_iter(&iter);
 }
 
 Handle<Value> DBusMethod(const Arguments& args){
