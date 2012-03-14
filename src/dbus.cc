@@ -241,45 +241,53 @@ static Handle<Value> decode_reply_message_by_iter(
       count = dbus_messages_iter_size(&internal_temp_iter);
       
       //create the result object
-      Local<Array> resultArray = Array::New(count);
       count = 0;
       dbus_message_iter_recurse(iter, &internal_iter);
 
-      do {
-        LOG("for each item\n");
-        //this is dict entry
-        if (dbus_message_iter_get_arg_type(&internal_iter) 
-                      == DBUS_TYPE_DICT_ENTRY) {
-          //Item is dict entry, it is exactly key-value pair
-          LOG(" DBUS_TYPE_DICT_ENTRY\n");
-          DBusMessageIter dict_entry_iter;
-          //The key 
-          dbus_message_iter_recurse(&internal_iter, &dict_entry_iter);
-          Handle<Value> key 
-                        = decode_reply_message_by_iter(&dict_entry_iter);
-          //The value
-          dbus_message_iter_next(&dict_entry_iter);
-          Handle<Value> value 
-                        = decode_reply_message_by_iter(&dict_entry_iter);
+      // Check the 
+      if (dbus_message_iter_get_arg_type(&internal_iter) 
+                    == DBUS_TYPE_DICT_ENTRY) {
+        //This is dict
+        Local<Object> resultObject = Object::New();
+
+        do {
+            LOG("for each item\n");
+            //Item is dict entry, it is exactly key-value pair
+            LOG(" DBUS_TYPE_DICT_ENTRY\n");
+            DBusMessageIter dict_entry_iter;
+            //The key 
+            dbus_message_iter_recurse(&internal_iter, &dict_entry_iter);
+            Handle<Value> key 
+                          = decode_reply_message_by_iter(&dict_entry_iter);
+            //The value
+            dbus_message_iter_next(&dict_entry_iter);
+            Handle<Value> value 
+                          = decode_reply_message_by_iter(&dict_entry_iter);
           
-          //set the property
-          resultArray->Set(key, value); 
-        } else {
-          //Item is array
+            //set the property
+            resultObject->Set(key, value); 
+        } while(dbus_message_iter_next(&internal_iter));
+
+		return resultObject;
+      } else {
+        //This is array
+        Local<Array> resultArray = Array::New(count);
+
+        do {
           Handle<Value> itemValue 
                   = decode_reply_message_by_iter(&internal_iter);
           resultArray->Set(count, itemValue);
           count++;
-        }
-      } while(dbus_message_iter_next(&internal_iter));
-      //return the array object
-      return resultArray;
+        } while(dbus_message_iter_next(&internal_iter));
+
+        return resultArray;
+      }
     }
     case DBUS_TYPE_VARIANT: {
       LOG("DBUS_TYPE_VARIANT\n");
       DBusMessageIter internal_iter;
       dbus_message_iter_recurse(iter, &internal_iter);
-      
+     
       Handle<Value> result 
                 = decode_reply_message_by_iter(&internal_iter);
       return result;
@@ -556,6 +564,7 @@ static bool encode_to_message_with_objects(Local<Value> value,
 ///  viewport, the type is Array([])
 static Handle<Value> decode_reply_messages(DBusMessage *message) {
   DBusMessageIter iter;
+  DBusMessageIter internal_iter;
   int type;
   int argument_count = 0;
   int count;
@@ -564,7 +573,6 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
     return Undefined();
   }     
 
-  Local<Array> resultArray = Array::New(count);
   dbus_message_iter_init(message, &iter);
 
   //handle error
@@ -575,16 +583,26 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
     }
   }
 
-  while ((type=dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
-    Handle<Value> valueItem = decode_reply_message_by_iter(&iter);
-    resultArray->Set(argument_count, valueItem);
+  // Get the first message for getting type
+  dbus_message_iter_recurse(&iter, &internal_iter);
+  if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_DICT_ENTRY) {
+    /* do not wrap array if it is object */
+    Handle<Value> resultObject = decode_reply_message_by_iter(&iter);
+    return resultObject;
+  } else {
+    Local<Array> resultArray = Array::New(count);
 
-    //for next message
-    dbus_message_iter_next (&iter);
-    argument_count++;
-  } //end of while loop
+    while ((type=dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
+      Handle<Value> valueItem = decode_reply_message_by_iter(&iter);
+      resultArray->Set(argument_count, valueItem);
+
+      //for next message
+      dbus_message_iter_next (&iter);
+      argument_count++;
+    } //end of while loop
   
-  return resultArray; 
+    return resultArray; 
+  }
 }
 
 Handle<Value> DBusMethod(const Arguments& args){
