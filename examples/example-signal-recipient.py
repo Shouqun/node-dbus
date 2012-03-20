@@ -55,6 +55,32 @@ def emit_signal():
 
    return False
 
+
+def emit_complexsignal():
+   #call the emitHelloSignal method 
+   object.emitHelloComplexSignal(dbus_interface="com.example.TestService")
+                          #reply_handler = handle_reply, error_handler = handle_error)
+   # exit after waiting a short time for the signal
+   #gobject.timeout_add(2000, loop.quit)
+
+   if sys.argv[1:] == ['--exit-service']:
+      object.Exit(dbus_interface='com.example.TestService')
+
+   return False
+
+def emit_complex_dict_signal():
+   #call the emitHelloSignal method 
+   object.emitHelloComplexDictSignal(dbus_interface="com.example.TestService")
+                          #reply_handler = handle_reply, error_handler = handle_error)
+   # exit after waiting a short time for the signal
+   #gobject.timeout_add(2000, loop.quit)
+
+   if sys.argv[1:] == ['--exit-service']:
+      object.Exit(dbus_interface='com.example.TestService')
+
+   return False
+
+
 def hello_signal_handler(hello_string):
     print ("Received signal (by connecting using remote object) and it says: "
            + hello_string)
@@ -94,7 +120,8 @@ if __name__ == '__main__':
     bus.add_signal_receiver(catchall_testservice_interface_handler, dbus_interface = "com.example.TestService", message_keyword='dbus_message')
 
     # Tell the remote object to emit the signal after a short delay
-    gobject.timeout_add(2000, emit_signal)
-
+    gobject.timeout_add(1000, emit_signal)
+    gobject.timeout_add(2000, emit_complexsignal)
+    gobject.timeout_add(3000, emit_complex_dict_signal);
     loop = gobject.MainLoop()
     loop.run()
