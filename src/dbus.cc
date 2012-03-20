@@ -268,7 +268,7 @@ static Handle<Value> decode_reply_message_by_iter(
             resultObject->Set(key, value); 
         } while(dbus_message_iter_next(&internal_iter));
 
-		return resultObject;
+		    return resultObject;
       } else {
         //This is array
         Local<Array> resultArray = Array::New(count);
@@ -574,13 +574,25 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
 
   //handle error
   if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR) {
-    const char *error_name = dbus_message_get_error_name(message);
-    if (error_name != NULL) {
-      ERROR("Error message: %s\n ",error_name);
-    }
+      const char *error_name = dbus_message_get_error_name(message);
+      if (error_name != NULL) {
+          ERROR("Error message: %s\n ",error_name);
+      }
   }
 
-  return decode_reply_message_by_iter(&iter);
+  int type;
+  int argument_count = 0;
+  Local<Array> resultArray = Array::New(count);
+  while ((type=dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
+      Handle<Value> valueItem = decode_reply_message_by_iter(&iter);
+      resultArray->Set(argument_count, valueItem);
+
+      //for next message
+      dbus_message_iter_next (&iter);
+      argument_count++;
+  } //end of while loop
+
+  return resultArray;
 }
 
 Handle<Value> DBusMethod(const Arguments& args){
