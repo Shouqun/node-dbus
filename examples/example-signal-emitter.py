@@ -51,7 +51,33 @@ class TestObject(dbus.service.Object):
         #you emit signals by calling the signal's skeleton method
         self.HelloSignal('Hello')
         return 'Signal emitted'
+    
+    @dbus.service.signal(dbus_interface='com.example.TestService', signature='us')
+    def HelloComplexSignal(self, number, content):
+        # The signal is emitted when this method exits
+        # You can have code here if you wish
+        print "To emit signal %d - %s"% (number, content)
+        pass
 
+    @dbus.service.method('com.example.TestService')
+    def emitHelloComplexSignal(self):
+        #you emit signals by calling the signal's skeleton method
+        self.HelloComplexSignal(10, 'Hello')
+        return 'Signal emitted'
+ 
+    @dbus.service.signal(dbus_interface='com.example.TestService', signature='usa{ss}')
+    def HelloComplexDictSignal(self, number, content, diction):
+        # The signal is emitted when this method exits
+        # You can have code here if you wish
+        print "To emit dict signal %d - %s"% (number, content)
+        pass
+
+    @dbus.service.method('com.example.TestService')
+    def emitHelloComplexDictSignal(self):
+        #you emit signals by calling the signal's skeleton method
+        self.HelloComplexDictSignal(10, 'Hello', {"first": "Hello Dict", "second": "from"})
+        return 'Signal emitted'
+ 
     @dbus.service.method("com.example.TestService",
                          in_signature='', out_signature='')
     def Exit(self):
