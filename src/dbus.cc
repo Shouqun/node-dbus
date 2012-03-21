@@ -12,6 +12,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "dbus_introspect.h"
+#include "dbus_register.h"
 
 using namespace v8;
 using namespace dbus_library;
@@ -330,7 +331,7 @@ static char* get_signature_from_v8_type(Local<Value>& value) {
 
 /// Encode the given argument from JavaScript into D-Bus message
 ///  append the data to DBusMessage according to the type and value
-static bool encode_to_message_with_objects(Local<Value> value, 
+bool encode_to_message_with_objects(Local<Value> value, 
                                            DBusMessageIter *iter, 
                                            char* signature) {
   DBusSignatureIter siter;
@@ -562,8 +563,10 @@ static bool encode_to_message_with_objects(Local<Value> value,
 ///  it iterate on the DBusMessage struct and wrap elements into an array
 ///  of v8 Object. the return type is a Array object, from the js
 ///  viewport, the type is Array([])
-static Handle<Value> decode_reply_messages(DBusMessage *message) {
+Handle<Value> decode_reply_messages(DBusMessage *message) {
   DBusMessageIter iter;
+  int type;
+  int argument_count = 0;
   int count;
 
   if ((count=dbus_messages_size(message)) <=0 ) {
@@ -580,19 +583,24 @@ static Handle<Value> decode_reply_messages(DBusMessage *message) {
       }
   }
 
-  int type;
-  int argument_count = 0;
-  Local<Array> resultArray = Array::New(count);
-  while ((type=dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
+  // Prepare an array to store data if it has more than one
+  if (dbus_message_iter_has_next(&iter)) {
+    Local<Array> resultArray = Array::New(count);
+
+	while ((type=dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
       Handle<Value> valueItem = decode_reply_message_by_iter(&iter);
       resultArray->Set(argument_count, valueItem);
 
-      //for next message
-      dbus_message_iter_next (&iter);
+      // For next message
+      dbus_message_iter_next(&iter);
       argument_count++;
-  } //end of while loop
+    }
 
-  return resultArray;
+    return resultArray;
+
+  } else {
+    return decode_reply_message_by_iter(&iter);
+  }
 }
 
 Handle<Value> DBusMethod(const Arguments& args){
@@ -993,6 +1001,13 @@ Handle<Value> BusInit(const Arguments& args)
   return Undefined();
 }
 
+Handle<Value> RunListener(const Arguments& args)
+{
+  ev_ref(EV_DEFAULT_UC);
+
+  return Undefined();
+}
+
 /// Add glib evene loop to libev
 struct econtext {
   GPollFD *pfd;
@@ -1113,6 +1128,9 @@ init (Handle<Object> target)
   NODE_SET_METHOD(target, "system_bus", SystemBus);
   NODE_SET_METHOD(target, "session_bus", SessionBus);
   NODE_SET_METHOD(target, "get_interface", GetInterface);
+  NODE_SET_METHOD(target, "runListener", RunListener);
+  NODE_SET_METHOD(target, "requestName", RequestName);
+  NODE_SET_METHOD(target, "registerObjectPath", RegisterObjectPath);
 
   //add glib event loop to libev main loop in node
   GMainContext *gc     = g_main_context_default();
