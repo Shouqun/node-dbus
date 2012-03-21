@@ -30,6 +30,7 @@ def build(bld):
   obj.source = '''
               src/dbus.cc
               src/dbus_introspect.cc
+              src/dbus_register.cc
               '''
   obj.lib = 'expat'
   obj.uselib = 'DBUS GDBUS EXPAT'
