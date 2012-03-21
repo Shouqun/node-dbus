@@ -90,48 +90,6 @@ AppendDictEntry(DBusMessageIter *iter, Local<Value> key, Local<Value> value)
 	return TRUE;
 }
 
-void
-GetSignatureFromValue(Local<Value> value, char *_sign)
-{
-	char *sign = _sign;
-
-	if (value->IsBoolean()) {
-		*sign = DBUS_TYPE_BOOLEAN;
-		*(sign + 1) = '\0';
-	} else if (value->IsString()) {
-		*sign = DBUS_TYPE_STRING;
-		*(sign + 1) = '\0';
-	} else if (value->IsInt32()) {
-		*sign = DBUS_TYPE_INT32;
-		*(sign + 1) = '\0';
-	} else if (value->IsUint32()) {
-		*sign = DBUS_TYPE_UINT32;
-		*(sign + 1) = '\0';
-	} else if (value->IsNumber()) {
-		*sign = DBUS_TYPE_DOUBLE;
-		*(sign + 1) = '\0';
-	} else if (value->IsArray()) {
-		*sign = DBUS_TYPE_ARRAY;
-		*(sign + 1) = '\0';
-	} else if (value->IsObject()) {
-/*
-		*sign = (int)DBUS_TYPE_ARRAY_AS_STRING;
-		*(sign + 1) = (int)DBUS_TYPE_STRING_AS_STRING;
-		*(sign + 2) = '\0';
-*/
-/*
-		*sign = DBUS_TYPE_ARRAY;
-		*(sign + 1) = '\0';
-*/
-		*sign = (int)DBUS_TYPE_ARRAY_AS_STRING;
-		*(sign + 1) = (int)DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING;
-		*(sign + 2) = (int)DBUS_TYPE_STRING_AS_STRING;
-		*(sign + 3) = (int)DBUS_TYPE_VARIANT_AS_STRING;
-		*(sign + 4) = (int)DBUS_DICT_ENTRY_END_CHAR_AS_STRING;
-		*(sign + 5) = '\0';
-	}
-}
-
 bool
 EncodeReplyValue(Local<Value> value, DBusMessageIter *iter)
 {
@@ -183,7 +141,6 @@ EncodeReplyValue(Local<Value> value, DBusMessageIter *iter)
 		dbus_message_iter_open_container(iter, DBUS_TYPE_ARRAY, DBUS_TYPE_VARIANT_AS_STRING, &subIter);
         
         Local<Array> arrayData = Local<Array>::Cast(value);
-        bool no_error_status = true;
 		for (unsigned int i = 0; i < arrayData->Length(); ++i) {
 			Local<Value> arrayItem = arrayData->Get(i);
 			AppendDictValue(&subIter, arrayItem);
@@ -194,7 +151,6 @@ EncodeReplyValue(Local<Value> value, DBusMessageIter *iter)
 	} else if (value->IsObject()) {
         Local<Object> value_object = value->ToObject();
         DBusMessageIter subIter;
-		char signature[6];
 
 		/* Create a new container */
 		dbus_message_iter_open_container(iter, DBUS_TYPE_ARRAY,
@@ -206,7 +162,6 @@ EncodeReplyValue(Local<Value> value, DBusMessageIter *iter)
         Local<Array> prop_names = value_object->GetOwnPropertyNames();
         int len = prop_names->Length();
 
-        bool no_error_status = true;
 		for (int i = 0; i < len; ++i) {
 			Local<Value> prop_name = prop_names->Get(i);
 			Local<Value> valueItem = value_object->Get(prop_name);
