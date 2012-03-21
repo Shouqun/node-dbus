@@ -269,7 +269,7 @@ static Handle<Value> decode_reply_message_by_iter(
             resultObject->Set(key, value); 
         } while(dbus_message_iter_next(&internal_iter));
 
-		return resultObject;
+		    return resultObject;
       } else {
         //This is array
         Local<Array> resultArray = Array::New(count);
@@ -577,10 +577,10 @@ Handle<Value> decode_reply_messages(DBusMessage *message) {
 
   //handle error
   if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR) {
-    const char *error_name = dbus_message_get_error_name(message);
-    if (error_name != NULL) {
-      ERROR("Error message: %s\n ",error_name);
-    }
+      const char *error_name = dbus_message_get_error_name(message);
+      if (error_name != NULL) {
+          ERROR("Error message: %s\n ",error_name);
+      }
   }
 
   // Prepare an array to store data if it has more than one
