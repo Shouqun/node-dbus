@@ -313,3 +313,73 @@ RegisterObjectPath(Arguments const &args)
 
 	return Undefined();
 }
+
+Handle<Value> EmitSignal(Arguments const &args)
+{
+  HandleScope scope;
+
+  if (args.Length() < 4) {
+    return ThrowException(Exception::RangeError(
+        String::New("Arguments not enough for emitSignal: "
+                    "  (bus_object, path, interface, signal [,arguments]")));
+  }
+
+  if (!args[0]->IsObject()) {
+    return ThrowException(Exception::TypeError(
+        String::New("first argument MUST be an object(bus)")));
+  }
+
+  if (!args[1]->IsString()) {
+    return ThrowException(Exception::TypeError(
+        String::New("second argument MUST be an string(object path)")));
+  }
+
+  if (!args[2]->IsString()) {
+    return ThrowException(Exception::TypeError(
+        String::New("third argument MUST be an string(interface)")));
+  }
+
+  if (!args[3]->IsString()) {
+    return ThrowException(Exception::TypeError(
+        String::New("third argument MUST be an string(signal)")));
+  }
+
+
+  DBusGConnection *connection = (DBusGConnection*)External::Unwrap(
+                                  args[0]->ToObject()->GetInternalField(0));
+
+  if (!connection) {
+    return ThrowException(Exception::TypeError(
+        String::New("Not a bus object")));
+  }
+
+  String::Utf8Value path(args[1]->ToString());
+  String::Utf8Value interface(args[2]->ToString());
+  String::Utf8Value signal(args[3]->ToString());
+
+  DBusMessage *signalMsg;
+	DBusMessageIter iter;
+
+  signalMsg = dbus_message_new_signal(*path, *interface, *signal);
+
+  //check if signal has arguments
+  if (args.Length() == 5) {
+    //prepare signal arguments
+    dbus_message_iter_init_append(signalMsg, &iter);
+
+    if (!EncodeReplyValue(args[4], &iter)) {
+      ERROR("Failed to encode signal arguments\n");
+    }
+  }
+
+  //send the signal
+  dbus_connection_send(dbus_g_connection_get_connection(connection),
+                       signalMsg, NULL);
+
+  dbus_connection_flush(dbus_g_connection_get_connection(connection));
+
+  dbus_message_unref(signalMsg);
+
+  return Undefined();
+}
+

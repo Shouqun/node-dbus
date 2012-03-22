@@ -963,7 +963,7 @@ Handle<Value> GetInterface(const Arguments& args) {
 
    //create the Interface object to return
   Local<Object> interface_object = Object::New();
-  interface_object->Set(String::New("xml_source"), String::New(iface_data));
+  interface_object->Set(String::New("xml_source"), String::New(introspect_data.c_str()));
 
   //get all methods
   std::list<BusMethod*>::iterator method_ite;
@@ -1131,6 +1131,7 @@ init (Handle<Object> target)
   NODE_SET_METHOD(target, "runListener", RunListener);
   NODE_SET_METHOD(target, "requestName", RequestName);
   NODE_SET_METHOD(target, "registerObjectPath", RegisterObjectPath);
+  NODE_SET_METHOD(target, "emitSignal", EmitSignal);
 
   //add glib event loop to libev main loop in node
   GMainContext *gc     = g_main_context_default();
