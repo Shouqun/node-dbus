@@ -189,7 +189,7 @@ static void expat_StartElementHandler(void *userData,
     }
     
   } else {
-    fprintf(stderr, "Error NodeType\n");
+    fprintf(stderr, "Unexpected opening element %s\n", name);
   }
 }
 
@@ -213,7 +213,7 @@ static void expat_EndElementHandler(void *userData,
     parser->is_on_argument = false;
     parser->current_argument = NULL;
   } else {
-    fprintf(stderr, "Error end Nodetype\n");
+    fprintf(stderr, "Unexpected closing element %s\n", name);
   }
 }
 
