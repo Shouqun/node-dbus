@@ -187,7 +187,8 @@ static void expat_StartElementHandler(void *userData,
     } else if (parser->is_on_signal) {
       parser->current_signal->args_.push_back(argument);
     }
-    
+  } else if (!strcmp(name, "property")) {
+    /* TODO */
   } else {
     fprintf(stderr, "Unexpected opening element %s\n", name);
   }
@@ -212,6 +213,8 @@ static void expat_EndElementHandler(void *userData,
   } else if (!strcmp(name, "arg")) {
     parser->is_on_argument = false;
     parser->current_argument = NULL;
+  } else if (!strcmp(name, "property")) {
+    /* TODO */
   } else {
     fprintf(stderr, "Unexpected closing element %s\n", name);
   }
