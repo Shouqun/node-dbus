@@ -37,6 +37,12 @@ public:
   std::string match;
 };
 
+class DBusAsyncData {
+public:
+  Handle<Object> callee;
+  DBusPendingCall *pending;
+};
+
 static DBusGConnection* GetBusFromType(DBusBusType type) {
   DBusGConnection *connection;
   GError *error;
@@ -603,11 +609,69 @@ Handle<Value> decode_reply_messages(DBusMessage *message) {
   }
 }
 
+/// async_method_callback: callback of aync method call
+static void async_method_callback(DBusPendingCall *pending, void *user_data)
+{
+  printf("Handle async method callback\n");
+
+  DBusMessage *reply_message;
+  DBusError error;
+  DBusAsyncData *data = (DBusAsyncData*)user_data;
+  Handle<Object> callee_object = data->callee;
+
+  dbus_error_init(&error);
+  reply_message = dbus_pending_call_steal_reply(pending);
+  if (!reply_message)
+    dbus_pending_call_unref(pending);
+
+  //create the execution context since its in new context
+  Persistent<Context> context = Context::New();
+  Context::Scope ctxScope(context);
+  HandleScope scope;
+  TryCatch try_catch;
+
+  //get the enabled property and the onemit callback
+  Local<Value> finish_callback
+                          = callee_object->Get(String::New("finish"));
+
+  if (! finish_callback->IsFunction()) {
+    ERROR("The callback is not a Function\n");
+    context.Dispose();
+
+    dbus_message_unref(reply_message);
+    dbus_pending_call_unref(pending);
+    return ;
+  }
+
+  Local<Function> callback  = Local<Function>::Cast(finish_callback);
+
+  //Decode reply message as argument
+  Handle<Value> args[1];
+  Handle<Value> arg0 = decode_reply_messages(reply_message);
+  args[0] = arg0;
+
+  //Do call the callback
+  callback->Call(callback, 1, args);
+
+  if (try_catch.HasCaught()) {
+    ERROR("Ooops, Exception on call the callback\n");
+  }
+
+  context.Dispose();
+
+  dbus_message_unref(reply_message);
+  dbus_pending_call_unref(pending);
+}
+
+
 Handle<Value> DBusMethod(const Arguments& args){
   
   HandleScope scope;
+  Handle<Value> return_value = Undefined();
   Local<Value> this_data = args.Data();
+  Local<Function> callee = args.Callee();
   void *data = External::Unwrap(this_data);
+  bool async_call = false;
 
   DBusMethodContainer *container= (DBusMethodContainer*) data;
   LOG("Calling method: %s\n", container->method); 
@@ -661,41 +725,79 @@ Handle<Value> DBusMethod(const Arguments& args){
     return Undefined();
   }
 
-  //call the dbus method and get the returned message, and decode to 
-  //target v8 object
-  DBusMessage *reply_message;
-  DBusError error;    
-  Handle<Value> return_value = Undefined();
+  // First check whether this function call is async call
+  if ( callee->Get(String::New("finish")) !=  Undefined() ) {
+    async_call = true;
+  }
 
-  dbus_error_init(&error); 
-  //send message and call sync dbus_method
-  reply_message = dbus_connection_send_with_reply_and_block(
-          dbus_g_connection_get_connection(container->connection),
-          message, -1, &error);
-  if (reply_message != NULL) {
-    if (dbus_message_get_type(reply_message) == DBUS_MESSAGE_TYPE_ERROR) {
-      ERROR("Error reply message\n");
+  //Perform sync/async D-Bus call
+  if (!async_call) {
+    //blocking call, call the dbus method and get the returned message
+    //and decode to target v8 object
+    DBusMessage *reply_message;
+    DBusError error;
 
-    } else if (dbus_message_get_type(reply_message) 
-                  == DBUS_MESSAGE_TYPE_METHOD_RETURN) {
-      //method call return ok, decoe the messge to v8 Value 
-      return_value = decode_reply_messages(reply_message);
+    dbus_error_init(&error);
+    //send message and call sync dbus_method
+    reply_message = dbus_connection_send_with_reply_and_block(
+            dbus_g_connection_get_connection(container->connection),
+            message, -1, &error);
+    if (reply_message != NULL) {
+      if (dbus_message_get_type(reply_message) == DBUS_MESSAGE_TYPE_ERROR) {
+        ERROR("Error reply message\n");
 
+      } else if (dbus_message_get_type(reply_message)
+                == DBUS_MESSAGE_TYPE_METHOD_RETURN) {
+        //method call return ok, decoe the messge to v8 Value
+        return_value = decode_reply_messages(reply_message);
+
+      } else {
+        ERROR("Unkonwn reply\n");
+      }
+      //free the reply message of dbus call
+      dbus_message_unref(reply_message);
     } else {
-      ERROR("Unkonwn reply\n");
-    }
-    //free the reply message of dbus call
-    dbus_message_unref(reply_message);
-  } else {
       ERROR("Error calling sync method:%s\n",error.message);
       dbus_error_free(&error);
-  }
+    }
  
+  } else { //do async call
+    bool call_return;
+    DBusError error;
+    DBusPendingCall *pending;
+    DBusAsyncData *async_data = new DBusAsyncData;
+
+    Persistent<Object> callee_handle = Persistent<Object>::New(callee);
+    async_data->callee = callee_handle;
+
+    dbus_error_init(&error);
+    //send message and call sync dbus_method
+    call_return = dbus_connection_send_with_reply(
+            dbus_g_connection_get_connection(container->connection),
+            message, &pending, -1/*timeout*/);
+    if (!call_return) {
+      //OOM
+      if (message != NULL)
+        dbus_message_unref(message);
+      return ThrowException(Exception::Error(String::New("error method call: "
+                                                         " Out of Memory")));
+    }
+
+    async_data->pending = pending;
+    call_return = dbus_pending_call_set_notify(pending, async_method_callback,
+                          async_data, NULL);
+    if (!call_return) {
+      if (message != NULL)
+        dbus_message_unref(message);
+      return ThrowException(Exception::Error(String::New("error set notify: "
+                                                           " Out of Memory")));
+    }
+  }
+
   //free the input dbus message if needed
   if (message != NULL) {
     dbus_message_unref(message);
   } 
-
   return return_value;
 }
 
