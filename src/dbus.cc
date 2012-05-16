@@ -39,7 +39,7 @@ public:
 
 class DBusAsyncData {
 public:
-  Handle<Object> callee;
+  Persistent<Object> callee;
   DBusPendingCall *pending;
 };
 
@@ -663,6 +663,19 @@ static void async_method_callback(DBusPendingCall *pending, void *user_data)
   dbus_pending_call_unref(pending);
 }
 
+/// dbus_async_call_free:  free data callback of async call
+static void dbus_async_call_free(void* user_data)
+{
+  DBusAsyncData *data = (DBusAsyncData*)user_data;
+  
+  //free the Persistent callee object
+  Persistent<Object> object = data->callee;
+  object.Dispose();
+  object.Clear();
+  
+  //free the data container
+  delete data;
+}
 
 Handle<Value> DBusMethod(const Arguments& args){
   
@@ -785,7 +798,7 @@ Handle<Value> DBusMethod(const Arguments& args){
 
     async_data->pending = pending;
     call_return = dbus_pending_call_set_notify(pending, async_method_callback,
-                          async_data, NULL);
+                          async_data, dbus_async_call_free);
     if (!call_return) {
       if (message != NULL)
         dbus_message_unref(message);

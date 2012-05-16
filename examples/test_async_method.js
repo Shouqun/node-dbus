@@ -7,7 +7,7 @@ dbus.start( function() {
   interface = dbus.get_interface(session, "com.example.SampleService", "/SomeObject", "com.example.SampleInterface");
   
   interface.HelloWorld['finish'] = function (args){ console.log(args) };
-  //interface.HelloWorld['error'] = function (args){ console.log(args) };
+  //interface.HelloWorld['timeout'] = 1000; // timeout of method call (milliseconds)
   result = interface.HelloWorld('Hello world form async call');
   console.log(result);
 
