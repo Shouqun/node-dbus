@@ -621,9 +621,10 @@ static void async_method_callback(DBusPendingCall *pending, void *user_data)
 
   dbus_error_init(&error);
   reply_message = dbus_pending_call_steal_reply(pending);
-  if (!reply_message)
+  if (!reply_message) {
     dbus_pending_call_unref(pending);
-
+    return;
+  }
   //create the execution context since its in new context
   Persistent<Context> context = Context::New();
   Context::Scope ctxScope(context);
@@ -776,6 +777,7 @@ Handle<Value> DBusMethod(const Arguments& args){
  
   } else { //do async call
     bool call_return;
+    int timeout = -1;  // default timeout is -1
     DBusError error;
     DBusPendingCall *pending;
     DBusAsyncData *async_data = new DBusAsyncData;
@@ -783,11 +785,18 @@ Handle<Value> DBusMethod(const Arguments& args){
     Persistent<Object> callee_handle = Persistent<Object>::New(callee);
     async_data->callee = callee_handle;
 
+    Local<Value> timeout_value;
+    if ( (timeout_value = callee->Get(String::New("timeout")))
+              !=  Undefined() ) {
+      if (timeout_value->IsInt32())
+        timeout = timeout_value->Int32Value();
+    }
+
     dbus_error_init(&error);
     //send message and call sync dbus_method
     call_return = dbus_connection_send_with_reply(
             dbus_g_connection_get_connection(container->connection),
-            message, &pending, -1/*timeout*/);
+            message, &pending, timeout);
     if (!call_return) {
       //OOM
       if (message != NULL)
