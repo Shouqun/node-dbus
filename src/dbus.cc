@@ -894,15 +894,28 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
                           = Local<Function>::Cast(callback_v);
 
   //Decode reply message as argument
-  Handle<Value> args[1];
   Handle<Value> arg0 = decode_reply_messages(message);
-  args[0] = arg0; 
 
   //Do call the callback
   if (arg0->IsArray()) {
-      callback->Call(callback, arg0->ToObject()->GetPropertyNames()->Length(), &arg0);
+	Local<Object> obj = arg0->ToObject();
+    Local<Array> prop_names = obj->GetPropertyNames()->GetOwnPropertyNames();
+    Handle<Value> args[prop_names->Length()];
+
+    int len = prop_names->Length();
+    for (int i = 0; i < len; ++i) {
+      Local<Value> prop_name = prop_names->Get(i);
+      Local<Value> valueItem = obj->Get(prop_name);
+
+      args[i] = valueItem;
+    }
+
+      callback->Call(callback, arg0->ToObject()->GetPropertyNames()->Length(), args);
   } else {
-      callback->Call(callback, 1, args);
+    Handle<Value> args[1];
+    args[0] = arg0; 
+
+    callback->Call(callback, 1, args);
   }
 
   if (try_catch.HasCaught()) {
