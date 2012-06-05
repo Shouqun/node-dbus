@@ -633,7 +633,7 @@ static void async_method_callback(DBusPendingCall *pending, void *user_data)
     return;
   }
   //create the execution context since its in new context
-  Persistent<Context> context = Context::New();
+  Local<Context> context = Context::GetCurrent();
   Context::Scope ctxScope(context);
   HandleScope scope;
   TryCatch try_catch;
@@ -644,7 +644,6 @@ static void async_method_callback(DBusPendingCall *pending, void *user_data)
 
   if (! finish_callback->IsFunction()) {
     ERROR("The callback is not a Function\n");
-    context.Dispose();
 
     dbus_message_unref(reply_message);
     dbus_pending_call_unref(pending);
@@ -664,8 +663,6 @@ static void async_method_callback(DBusPendingCall *pending, void *user_data)
   if (try_catch.HasCaught()) {
     ERROR("Ooops, Exception on call the callback\n");
   }
-
-  context.Dispose();
 
   dbus_message_unref(reply_message);
   dbus_pending_call_unref(pending);
@@ -867,7 +864,7 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
   } 
 
   //create the execution context since its in new context
-  Persistent<Context> context = Context::New();
+  Local<Context> context = Context::GetCurrent();
   Context::Scope ctxScope(context); 
   HandleScope scope;
   TryCatch try_catch;
@@ -883,17 +880,14 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
   if ( callback_enabled == Undefined() 
                       || callback_v == Undefined()) {
     ERROR("Callback undefined\n");
-    context.Dispose();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
   if (! callback_enabled->ToBoolean()->Value()) {
     ERROR("Callback not enabled\n");
-    context.Dispose();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
   if (! callback_v->IsFunction()) {
     ERROR("The callback is not a Function\n");
-    context.Dispose();
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
   }
 
@@ -929,7 +923,6 @@ static DBusHandlerResult dbus_signal_filter(DBusConnection* connection,
     ERROR("Ooops, Exception on call the callback\n");
   } 
   
-  context.Dispose();
   return DBUS_HANDLER_RESULT_HANDLED;
 }
 
