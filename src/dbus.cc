@@ -284,8 +284,15 @@ static Handle<Value> decode_reply_message_by_iter(
           Handle<Value> itemValue 
                   = decode_reply_message_by_iter(&internal_iter);
           resultArray->Set(count, itemValue);
+
           count++;
         } while(dbus_message_iter_next(&internal_iter));
+
+        // This array has only one item and it's undefined
+        if (count == 1) {
+          if (resultArray->Get(0)->IsUndefined())
+            return Array::New(0);
+        }
 
         return resultArray;
       }
