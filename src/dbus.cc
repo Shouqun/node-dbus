@@ -490,7 +490,7 @@ bool encode_to_message_with_objects(Local<Value> value,
         for (unsigned int i=0; i < arrayData->Length(); i++) {
           ERROR("Argument Arrary Item:%d\n", i);
           Local<Value> arrayItem = arrayData->Get(i);
-          if ( encode_to_message_with_objects(arrayItem, 
+          if ( ! encode_to_message_with_objects(arrayItem,
                                           &subIter, array_sig) ) {
             no_error_status = false;
             break;
@@ -727,13 +727,12 @@ Handle<Value> DBusMethod(const Arguments& args){
       
       //encode to message with given v8 Objects and the signature
       if (! encode_to_message_with_objects(args[count], &iter, arg_sig)) {
-        dbus_free(arg_sig);
         no_error_status = false; 
       }
 
       dbus_free(arg_sig);  
       count++;
-    } while (dbus_signature_iter_next(&siter));
+    } while (no_error_status && dbus_signature_iter_next(&siter));
   }
   
   //check if there is error on encode dbus message
