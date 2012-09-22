@@ -1,6 +1,6 @@
 {
   "name" : "dbus",
-  "version" : "0.0.5",
+  "version" : "0.0.6",
   "description": "A D-Bus binding for Node",
   "author" : "Shouqun Liu <liushouqun@gmail.com>",
   "repository" : {
@@ -9,6 +9,6 @@
   },
   "main" : "./lib/dbus",
   "scripts" : {
-    "install" : "node-waf configure build"
+    "install" : "node-gyp configure build"
   }
 }
