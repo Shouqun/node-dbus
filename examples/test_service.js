@@ -44,11 +44,8 @@ dbus.start(function() {
 	/* Register Agent Methods */
 	dbusRegister.addMethods(object_path, interface_path, Methods);
   
-  /*Set the introspectable method, read xml source file fist*/
-  xmlSource = fs.readFileSync('examples/test_service.xml', encoding='utf8');
-  console.log(xmlSource);
-  dbusRegister.setIntrospectable(object_path, xmlSource );
-
-	/* Loop */
-	dbus.runListener();
+	/* Set the introspectable method, read xml source file fist */
+	xmlSource = fs.readFileSync('examples/test_service.xml', encoding='utf8');
+	console.log(xmlSource);
+	dbusRegister.setIntrospectable(object_path, xmlSource);
 });

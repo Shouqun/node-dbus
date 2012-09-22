@@ -1,5 +1,6 @@
 #include <v8.h>
 #include <node.h>
+#include <node_version.h>
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -13,6 +14,9 @@
 #include "dbus.h"
 #include "dbus_introspect.h"
 #include "dbus_register.h"
+#if !(NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8)
+#include "context.h"
+#endif
 
 using namespace v8;
 using namespace dbus_library;
@@ -58,6 +62,11 @@ static DBusGConnection* GetBusFromType(DBusBusType type) {
   }
   return connection;
 }
+
+#if !(NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8)
+/* Context */
+GContext *context = new GContext;
+#endif
 
 static Persistent<ObjectTemplate> g_connetion_template_;
 static bool g_is_signal_filter_attached_ = false;
@@ -1141,13 +1150,16 @@ Handle<Value> BusInit(const Arguments& args)
   return Undefined();
 }
 
-Handle<Value> RunListener(const Arguments& args)
+Handle<Value> Uninit(const Arguments& args)
 {
-  ev_ref(EV_DEFAULT_UC);
+#if !(NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8)
+  context->Uninit();
+#endif
 
   return Undefined();
 }
 
+#if NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8
 /// Add glib evene loop to libev
 struct econtext {
   GPollFD *pfd;
@@ -1257,22 +1269,23 @@ static void check_cb (EV_P_ ev_check *w, int revents) {
 }
 
 static struct econtext default_context;
+#endif
 
 extern "C" void
 init (Handle<Object> target)
 {
   HandleScope scope;
-  target->Set(String::New("hello"), String::New("world"));
 
-  NODE_SET_METHOD(target , "init", BusInit);
+  NODE_SET_METHOD(target, "init", BusInit);
+  NODE_SET_METHOD(target, "uninit", Uninit);
   NODE_SET_METHOD(target, "system_bus", SystemBus);
   NODE_SET_METHOD(target, "session_bus", SessionBus);
   NODE_SET_METHOD(target, "get_interface", GetInterface);
-  NODE_SET_METHOD(target, "runListener", RunListener);
   NODE_SET_METHOD(target, "requestName", RequestName);
   NODE_SET_METHOD(target, "registerObjectPath", RegisterObjectPath);
   NODE_SET_METHOD(target, "emitSignal", EmitSignal);
 
+#if NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8
   //add glib event loop to libev main loop in node
   GMainContext *gc     = g_main_context_default();
   struct econtext *ctx = &default_context;
@@ -1295,4 +1308,10 @@ init (Handle<Object> target)
 
   ev_init (&ctx->tw, timer_cb);
   ev_set_priority (&ctx->tw, EV_MINPRI);
+
+#else
+
+  // Initializing GLib event loop with libuv
+  context->Init();
+#endif
 }
