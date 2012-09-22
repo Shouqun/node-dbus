@@ -29,6 +29,7 @@ def build(bld):
   obj.target = 'dbus'
   obj.source = '''
               src/dbus.cc
+              src/context.cc
               src/dbus_introspect.cc
               src/dbus_register.cc
               '''
