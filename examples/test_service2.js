@@ -89,7 +89,4 @@ dbus.start(function() {
 				'</node>';
 		}
 	});
-
-	/* Loop */
-	dbus.runListener();
 });
