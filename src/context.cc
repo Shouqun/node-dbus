@@ -110,7 +110,20 @@ void GContext::prepare_cb(uv_prepare_t *handle, int status)
 
 void GContext::check_cb(uv_check_t *handle, int status)
 {
+	gint i;
 	struct gcontext *ctx = &g_context;
+
+	/* Release all polling events which aren't finished yet. */
+	for (i = 0; i < ctx->nfds; ++i) {
+		GPollFD *pfd = ctx->fds + i;
+		uv_poll_t *pt = ctx->poll_handles + i;
+
+		if (uv_is_active((uv_handle_t *)pt)) {
+			uv_poll_stop(pt);
+			uv_close((uv_handle_t *)pt, NULL);
+			delete (struct gcontext_pollfd *)pt->data;
+		}
+	}
 
 	g_main_context_check(ctx->gc, ctx->max_priority, ctx->fds, ctx->nfds);
 }
