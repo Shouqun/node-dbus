@@ -5,7 +5,7 @@
   "author" : "Shouqun Liu <liushouqun@gmail.com>",
   "contributors": [
     "Fred Chien <cfsghost@gmail.com>"
-  ]
+  ],
   "repository" : {
     "type" : "git",
     "url" : "git://github.com/Shouqun/node-dbus.git"
