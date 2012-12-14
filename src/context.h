@@ -5,6 +5,17 @@
 #include <node.h>
 #include <glib.h>
 
+struct gcontext_pollfd {
+	GPollFD *pfd;
+};
+
+struct poll_handler {
+	int fd;
+	uv_poll_t *pt;
+	struct gcontext_pollfd *pollfd;
+	int ref;
+};
+
 struct gcontext {
 	int max_priority;
 	int nfds;
@@ -12,11 +23,7 @@ struct gcontext {
 	GPollFD *fds;
 	GMainContext *gc;
 
-	uv_poll_t *poll_handles;
-};
-
-struct gcontext_pollfd {
-	GPollFD *pfd;
+	std::list<poll_handler> poll_handlers;
 };
 
 class GContext {
