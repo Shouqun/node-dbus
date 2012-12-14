@@ -1,6 +1,7 @@
 #include <v8.h>
 #include <node.h>
 #include <node_version.h>
+#include <list>
 
 #if !(NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8)
 
@@ -57,10 +58,6 @@ void GContext::poll_cb(uv_poll_t *handle, int status, int events)
 	GPollFD *pfd = _pfd->pfd;
 
 	pfd->revents |= pfd->events & ((events & UV_READABLE ? G_IO_IN : 0) | (events & UV_WRITABLE ? G_IO_OUT : 0));
-
-	uv_poll_stop(handle);
-	uv_close((uv_handle_t *)handle, NULL);
-	delete _pfd;
 }
 
 void GContext::prepare_cb(uv_prepare_t *handle, int status)
@@ -68,8 +65,6 @@ void GContext::prepare_cb(uv_prepare_t *handle, int status)
 	gint i;
 	gint timeout;
 	struct gcontext *ctx = &g_context;
-
-	g_main_context_dispatch(ctx->gc);
 
 	g_main_context_prepare(ctx->gc, &ctx->max_priority);
 
@@ -81,51 +76,80 @@ void GContext::prepare_cb(uv_prepare_t *handle, int status)
 			ctx->allocated_nfds))) { 
 
 		g_free(ctx->fds);
-		g_free(ctx->poll_handles);
 
-		ctx->allocated_nfds = 1;
-		while (ctx->allocated_nfds < ctx->nfds) {
-			ctx->allocated_nfds <<= 1;
-		}
+		ctx->allocated_nfds = ctx->nfds;
 
 		ctx->fds = g_new(GPollFD, ctx->allocated_nfds);
-		ctx->poll_handles = g_new(uv_poll_t, ctx->allocated_nfds);
 	}
 
 	/* Poll */
-	for (i = 0; i < ctx->nfds; ++i) {
-		GPollFD *pfd = ctx->fds + i;
-		uv_poll_t *pt = ctx->poll_handles + i;
+	if (ctx->nfds || timeout != 0) {
+		/* Reduce reference count of handler */
+		for (std::list<poll_handler>::iterator phandler = ctx->poll_handlers.begin(); phandler != ctx->poll_handlers.end(); ++phandler) {
+			phandler->ref = 0;
+		}
 
-		struct gcontext_pollfd *data = new gcontext_pollfd;
-		data->pfd = pfd;
-		pt->data = data;
+		/* Process current file descriptors from GContext */
+		for (i = 0; i < ctx->nfds; ++i) {
+			GPollFD *pfd = ctx->fds + i;
 
-		pfd->revents = 0;
+			pfd->revents = 0;
 
-		uv_poll_init(uv_default_loop(), pt, pfd->fd);
-		uv_poll_start(pt, UV_READABLE | UV_WRITABLE, poll_cb);
+			/* Finding this file descriptor in list */
+			bool exists = false;
+			for (std::list<poll_handler>::iterator phandler = ctx->poll_handlers.begin(); phandler != ctx->poll_handlers.end(); ++phandler) {
+				if (phandler->fd == pfd->fd) {
+					/* Update GPollFD */
+					phandler->pollfd->pfd = pfd;
+					phandler->ref = 1;
+					exists = true;
+					break;
+				}
+			}
+
+			if (exists)
+				continue;
+
+			/* Preparing poll handler */
+			struct poll_handler *phandler = new poll_handler;
+			struct gcontext_pollfd *pollfd = new gcontext_pollfd;
+			pollfd->pfd = pfd;
+			phandler->fd = pfd->fd;
+			phandler->pollfd = pollfd;
+			phandler->ref = 1;
+
+			/* Create uv poll handler, then append own poll handler on it */
+			uv_poll_t *pt = new uv_poll_t;
+			pt->data = pollfd;
+			phandler->pt = pt;
+
+			uv_poll_init(uv_default_loop(), pt, pfd->fd);
+			uv_poll_start(pt, UV_READABLE | UV_WRITABLE, poll_cb);
+
+			ctx->poll_handlers.push_back(*phandler);
+		}
+
+		/* Remove handlers which aren't required */
+		for (std::list<poll_handler>::iterator phandler = ctx->poll_handlers.begin(); phandler != ctx->poll_handlers.end(); ++phandler) {
+			if (!phandler->ref) {
+
+				uv_poll_stop(phandler->pt);
+				uv_close((uv_handle_t *)phandler->pt, NULL);
+
+				delete phandler->pollfd;
+
+				phandler = ctx->poll_handlers.erase(phandler);
+			}
+		}
 	}
 }
 
 void GContext::check_cb(uv_check_t *handle, int status)
 {
-	gint i;
 	struct gcontext *ctx = &g_context;
 
-	/* Release all polling events which aren't finished yet. */
-	for (i = 0; i < ctx->nfds; ++i) {
-		GPollFD *pfd = ctx->fds + i;
-		uv_poll_t *pt = ctx->poll_handles + i;
-
-		if (uv_is_active((uv_handle_t *)pt)) {
-			uv_poll_stop(pt);
-			uv_close((uv_handle_t *)pt, NULL);
-			delete (struct gcontext_pollfd *)pt->data;
-		}
-	}
-
 	g_main_context_check(ctx->gc, ctx->max_priority, ctx->fds, ctx->nfds);
+	g_main_context_dispatch(ctx->gc);
 }
 
 #endif
