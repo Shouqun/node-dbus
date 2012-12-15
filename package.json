@@ -10,6 +10,9 @@
     "type" : "git",
     "url" : "git://github.com/Shouqun/node-dbus.git"
   },
+  "dependencies": {
+    "gcontext": ">= 0.0.2"
+  },
   "main" : "./lib/dbus",
   "scripts" : {
     "install" : "node-gyp configure build"

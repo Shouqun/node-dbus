@@ -14,9 +14,6 @@
 #include "dbus.h"
 #include "dbus_introspect.h"
 #include "dbus_register.h"
-#if !(NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8)
-#include "context.h"
-#endif
 
 using namespace v8;
 using namespace dbus_library;
@@ -62,11 +59,6 @@ static DBusGConnection* GetBusFromType(DBusBusType type) {
   }
   return connection;
 }
-
-#if !(NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8)
-/* Context */
-GContext *context = new GContext;
-#endif
 
 static Persistent<ObjectTemplate> g_connetion_template_;
 static bool g_is_signal_filter_attached_ = false;
@@ -1153,7 +1145,7 @@ Handle<Value> BusInit(const Arguments& args)
 Handle<Value> Uninit(const Arguments& args)
 {
 #if !(NODE_MAJOR_VERSION == 0 && NODE_MINOR_VERSION < 8)
-  context->Uninit();
+  //context->Uninit();
 #endif
 
   return Undefined();
@@ -1309,9 +1301,5 @@ init (Handle<Object> target)
   ev_init (&ctx->tw, timer_cb);
   ev_set_priority (&ctx->tw, EV_MINPRI);
 
-#else
-
-  // Initializing GLib event loop with libuv
-  context->Init();
 #endif
 }
