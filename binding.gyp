@@ -4,7 +4,6 @@
 			'target_name': 'dbus',
 			'sources': [
 				'src/dbus.cc',
-				'src/context.cc',
 				'src/dbus_introspect.cc',
 				'src/dbus_register.cc'
 			],
