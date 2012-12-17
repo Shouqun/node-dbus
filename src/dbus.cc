@@ -370,7 +370,7 @@ bool encode_to_message_with_objects(Local<Value> value,
     case DBUS_TYPE_UINT32:
     case DBUS_TYPE_UINT64:
     case DBUS_TYPE_BYTE: {
-      dbus_uint64_t data = value->IntegerValue();
+      dbus_uint64_t data = value->NumberValue();
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         ERROR("Error append numeric\n");
         return false;
