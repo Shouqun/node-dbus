@@ -222,7 +222,7 @@ static Handle<Value> decode_reply_message_by_iter(
     case DBUS_TYPE_UINT64: {
       dbus_uint64_t value = 0; 
       dbus_message_iter_get_basic(iter, &value);
-      return Integer::New(value);
+      return Number::New(value);
       break;
     }
     case DBUS_TYPE_DOUBLE: {
