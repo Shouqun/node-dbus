@@ -61,7 +61,6 @@ static DBusGConnection* GetBusFromType(DBusBusType type) {
 }
 
 static Persistent<ObjectTemplate> g_connetion_template_;
-static bool g_is_signal_filter_attached_ = false;
 
 //the signal map stores v8 Persistent object by the signal string
 typedef std::map<std::string, Handle<Object> > SignalMap;
@@ -935,13 +934,6 @@ Handle<Value> GetSignal(Local<Object>& interface_object,
                                          BusSignal *signal) {
   HandleScope scope;
 
-  if (!g_is_signal_filter_attached_ ) {
-    ERROR("attach signal filter\n");
-    dbus_connection_add_filter(dbus_g_connection_get_connection(connection),
-                             dbus_signal_filter, NULL, NULL);
-    g_is_signal_filter_attached_ = true;
-  }
-
   DBusError error;
   dbus_error_init (&error); 
   dbus_bus_add_match ( dbus_g_connection_get_connection(connection),
@@ -1127,7 +1119,8 @@ Handle<Value> GetInterface(const Arguments& args) {
     GetSignal(interface_object, connection, *service_name,
               *object_path, *interface_name, signal);
   }
-
+  dbus_connection_add_filter(dbus_g_connection_get_connection(connection),
+                             dbus_signal_filter, NULL, NULL);
   ParserRelease(&parser);
 
   return scope.Close(interface_object); 
