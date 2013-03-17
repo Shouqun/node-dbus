@@ -1157,4 +1157,5 @@ init (Handle<Object> target)
   NODE_SET_METHOD(target, "requestName", RequestName);
   NODE_SET_METHOD(target, "registerObjectPath", RegisterObjectPath);
   NODE_SET_METHOD(target, "emitSignal", EmitSignal);
+  NODE_SET_METHOD(target, "sendMessageReply", _SendMessageReply);
 }

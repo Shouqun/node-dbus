@@ -22,4 +22,7 @@ dbus.start( function() {
 	console.log('Original Object Structure:');
 	console.log(obj);
 	
+	// Asynchronize method
+	var result = interface.AsyncMethod();
+	console.log(result);
 });

@@ -198,6 +198,27 @@ SendMessageReply(DBusConnection *connection, DBusMessage *message, Local<Value> 
 	dbus_message_unref(reply);
 }
 
+Handle<Value>
+_SendMessageReply(Arguments const &args)
+{
+	Persistent<ObjectTemplate> message_template;
+	DBusConnection *connection;
+	DBusMessage *message;
+
+	if (!args[0]->IsObject()) {
+		return ThrowException(Exception::TypeError(
+			String::New("first argument must be a object (message object)")
+		));
+	}
+
+	connection = (DBusConnection*) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
+	message = (DBusMessage*) External::Unwrap(args[0]->ToObject()->GetInternalField(1));
+
+	SendMessageReply(connection, message, args[1]);
+
+	return Undefined();
+}
+
 static DBusHandlerResult
 MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data)
 {
@@ -208,20 +229,34 @@ MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data
 
 	args_value = decode_reply_messages(message);
 
-	int argc = 3;
-	Local<Value> argv[3] = {
-		Local<Value>::New(String::New(dbus_message_get_interface(message))),
-		Local<Value>::New(String::New(dbus_message_get_member(message))),
-		Local<Value>::New(args_value)
-	};
+	Handle<ObjectTemplate> object_template = ObjectTemplate::New();
+	object_template->SetInternalFieldCount(2);
+	Persistent<ObjectTemplate> message_template = Persistent<ObjectTemplate>::New(object_template);
+
+	/* package connection and message */
+	Local<Object> message_object = message_template->NewInstance();
+	message_object->SetInternalField(0, External::New(connection));
+	message_object->SetInternalField(1, External::New(message));
 
 	/* 
 	 * NOTE: Using JavaScript to handle message is easier for development.
 	 * If it has performance concern, we can integrate it into C++ code.
 	 */
+
+	int argc = 4;
+	Local<Value> argv[4] = {
+		Local<Value>::New(String::New(dbus_message_get_interface(message))),
+		Local<Value>::New(String::New(dbus_message_get_member(message))),
+		message_object,
+		Local<Value>::New(args_value)
+	};
+
 	return_value = (*f)->Call(*f, argc, argv);
 
-	SendMessageReply(connection, message, return_value);
+	if (!return_value->IsNull()) {
+		message_template.Dispose();
+		SendMessageReply(connection, message, return_value);
+	}
 
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
