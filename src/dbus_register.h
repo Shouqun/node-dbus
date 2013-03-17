@@ -11,6 +11,7 @@ static DBusHandlerResult MessageHandler(DBusConnection *connection, DBusMessage 
 static void UnregisterMessageHandler(DBusConnection *connection, void *user_data);
 static inline DBusObjectPathVTable CreateVTable();
 
+v8::Handle<v8::Value> _SendMessageReply(v8::Arguments const &args);
 v8::Handle<v8::Value> RequestName(v8::Arguments const &args);
 v8::Handle<v8::Value> RegisterObjectPath(v8::Arguments const &args);
 v8::Handle<v8::Value> EmitSignal(v8::Arguments const &args);

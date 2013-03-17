@@ -34,6 +34,15 @@ dbus.start(function() {
 				},
 				'sub-array': [ 'one', 'two', 3 ]
 			};
+		},
+		AsyncMethod: function(callback) {
+
+			callback({
+				'IronMan': 'awesome',
+				'Hunter': 'hummmm'
+			});
+
+			return null;
 		}
 	};
 
@@ -56,6 +65,9 @@ dbus.start(function() {
 					'<arg type=\"a(oa{sv})\" direction=\"out\"/>' +
 					'</method>' + 
 					'<method name=\"GetObject\">' +
+					'<arg type=\"a{sv}\" direction=\"out\"/>' +
+					'</method>' + 
+					'<method name=\"AsyncMethod\">' +
 					'<arg type=\"a{sv}\" direction=\"out\"/>' +
 					'</method>' + 
 					'</interface>' +
