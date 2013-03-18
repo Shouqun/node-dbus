@@ -37,9 +37,11 @@ dbus.start(function() {
 		},
 		AsyncMethod: function(callback) {
 
-			callback({
-				'IronMan': 'awesome',
-				'Hunter': 'hummmm'
+			process.nextTick(function() {
+				callback({
+					'IronMan': 'awesome',
+					'Hunter': 'hummmm'
+				});
 			});
 
 			return null;

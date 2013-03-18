@@ -216,6 +216,8 @@ _SendMessageReply(Arguments const &args)
 
 	SendMessageReply(connection, message, args[1]);
 
+	dbus_message_unref(message);
+
 	return Undefined();
 }
 
@@ -256,6 +258,8 @@ MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data
 	if (!return_value->IsNull()) {
 		message_template.Dispose();
 		SendMessageReply(connection, message, return_value);
+	} else {
+		dbus_message_ref(message);
 	}
 
 	return DBUS_HANDLER_RESULT_HANDLED;
