@@ -1159,3 +1159,5 @@ init (Handle<Object> target)
   NODE_SET_METHOD(target, "emitSignal", EmitSignal);
   NODE_SET_METHOD(target, "sendMessageReply", _SendMessageReply);
 }
+
+NODE_MODULE(dbus, init)
