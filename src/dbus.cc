@@ -619,7 +619,7 @@ Handle<Value> decode_reply_messages(DBusMessage *message) {
 /// async_method_callback: callback of aync method call
 static void async_method_callback(DBusPendingCall *pending, void *user_data)
 {
-  printf("Handle async method callback\n");
+  //printf("Handle async method callback\n");
 
   DBusMessage *reply_message;
   DBusError error;
