@@ -201,6 +201,7 @@ SendMessageReply(DBusConnection *connection, DBusMessage *message, Local<Value> 
 Handle<Value>
 _SendMessageReply(Arguments const &args)
 {
+	HandleScope scope;
 	Persistent<ObjectTemplate> message_template;
 	DBusConnection *connection;
 	DBusMessage *message;
@@ -215,8 +216,6 @@ _SendMessageReply(Arguments const &args)
 	message = (DBusMessage*) External::Unwrap(args[0]->ToObject()->GetInternalField(1));
 
 	SendMessageReply(connection, message, args[1]);
-
-	dbus_message_unref(message);
 
 	return Undefined();
 }
@@ -255,14 +254,13 @@ MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data
 
 	return_value = (*f)->Call(*f, argc, argv);
 
+	message_template.Dispose();
 	if (!return_value->IsNull()) {
-		message_template.Dispose();
 		SendMessageReply(connection, message, return_value);
-	} else {
-		dbus_message_ref(message);
+		return DBUS_HANDLER_RESULT_HANDLED;
 	}
 
-	return DBUS_HANDLER_RESULT_HANDLED;
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
 static void
