@@ -66,10 +66,10 @@ namespace NodeDBus {
 		String::Utf8Value signature(args[5]->ToString());
 
 		// Get bus from internal field
-		BusObject *bus = (DBusGConnection*) External::Unwrap(bus_object->GetInternalField(0));
+		BusObject *bus = (BusObject *) External::Unwrap(bus_object->GetInternalField(0));
 
 		// Create message for method call
-		DBusMessage *message = dbus_message_new_method_call(*service_name, *object_path, *interface_name, method);
+		DBusMessage *message = dbus_message_new_method_call(*service_name, *object_path, *interface_name, *method);
 
 		// Preparing method arguments
 		if (args[6]->IsObject()) {
@@ -77,7 +77,7 @@ namespace NodeDBus {
 			DBusSignatureIter siter;
 			DBusError error;
 
-			Local<Object> argumentObject = args[6]->ToObject();
+			Local<Array> argument_arr = Local<Array>::Cast(args[6]);
 
 			// Initializing augument message
 			dbus_message_iter_init_append(message, &iter); 
@@ -85,15 +85,23 @@ namespace NodeDBus {
 			dbus_error_init(&error);
 
 			// Initializing signature
-			if (!dbus_signature_validate(signature, &error)) {
-				ERROR("Invalid signature: %s\n", error.message);
+			if (!dbus_signature_validate(*signature, &error)) {
+				printf("Invalid signature: %s\n", error.message);
 			}
 
-			dbus_signature_iter_init(&siter, signature);
-			// TODO: encode arguments to message
+			dbus_signature_iter_init(&siter, *signature);
+			for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
+				char *arg_sig = dbus_signature_iter_get_signature(&siter);
+
+				// TODO: encode arguments to message
+
+				dbus_free(arg_sig);
+				dbus_signature_iter_next(&siter);
+			}
 		}
 
 		// TODO: Process message returned
+		return Undefined();
 	}
 
 	static void init(Handle<Object> target) {
