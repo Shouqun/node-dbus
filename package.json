@@ -1,6 +1,6 @@
 {
   "name" : "dbus",
-  "version" : "0.0.11",
+  "version" : "0.1.0",
   "description": "A D-Bus binding for Node",
   "author" : "Shouqun Liu <liushouqun@gmail.com>",
   "contributors": [
@@ -9,9 +9,6 @@
   "repository" : {
     "type" : "git",
     "url" : "git://github.com/Shouqun/node-dbus.git"
-  },
-  "dependencies": {
-    "gcontext": ">= 0.0.2"
   },
   "engines": {
     "node": ">= 0.8.0"

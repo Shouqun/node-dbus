@@ -2,56 +2,13 @@
 node-dbus is a D-Bus binding for node has the following capabilities: (1) call D-Bus methods, (2) asynchronous method call, (3) receive D-Bus signals, (4) export D-Bus services
 
 ## How To Build
-To build, do:  `node-waf configure build`
-
-## Test node-dbus
-### To test method call
-   Run the sample D-Bus service first:
-       ```
-       python examples/test-service.py
-       ```
-       
-   Then run the test script in node:
-       ```node examples/test_method.js```
-
-### To test asynchronous D-Bus method call
-   Run the sample D-Bus service first:
-       ```
-       python examples/example-service.py
-       ```
-
-   Then run the async method call test script in node:
-       ```
-       node examples/test_async_method.js
-       ```
-
-### To test signal receipt
-   Run the sample D-Bus signal service first:
-        ```
-	  python examples/example-signal-emitter.py
-        ```
-
-   Then run the test script in node:
-        ```
-	     node examples/test_signal2.js
-        ```
-
-### To test create D-Bus service
-   Run the sample service script file:
-       ```
-       node examples/test_service1.js
-       ```
-
-   Then run the service client teset script:
-       ``` 
-	     node examples/test_service1_method.js
-       ```
+To build, do:  `node-gyp configure build`
 
 ## License 
 
 (The MIT License)
 
-Copyright (c) 2012 
+Copyright (c) 2013
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
