@@ -3,7 +3,9 @@
 		{
 			'target_name': 'dbus',
 			'sources': [
-				'src/dbus.cc'
+				'src/dbus.cc',
+				'src/encoder.cc',
+				'src/decoder.cc'
 			],
 			'conditions': [
 				['OS=="linux"', {

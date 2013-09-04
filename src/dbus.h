@@ -21,6 +21,11 @@ namespace NodeDBus {
 		}
 	};
 
+	typedef struct {
+		struct NodeCallback *callback;
+		DBusPendingCall *pending;
+	} DBusAsyncData;
+
 	typedef enum {
 		NODE_DBUS_BUS_SYSTEM,
 		NODE_DBUS_BUS_SESSION
