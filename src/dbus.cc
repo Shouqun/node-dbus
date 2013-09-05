@@ -5,6 +5,7 @@
 #include <dbus/dbus.h>
 
 #include "dbus.h"
+#include "connection.h"
 #include "decoder.h"
 #include "encoder.h"
 
@@ -85,6 +86,9 @@ namespace NodeDBus {
 
 		if (connection == NULL)
 			return ThrowException(Exception::Error(String::New("Failed to get bus object")));
+
+		// Initializing loop
+		Connection::Init(connection);
 
 		// Initializing connection object
 		Handle<ObjectTemplate> object_template = ObjectTemplate::New();

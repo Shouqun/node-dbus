@@ -4,6 +4,7 @@
 			'target_name': 'dbus',
 			'sources': [
 				'src/dbus.cc',
+				'src/connection.cc',
 				'src/encoder.cc',
 				'src/decoder.cc'
 			],
