@@ -36,6 +36,9 @@ namespace Connection {
 
 	static dbus_bool_t watch_add(DBusWatch *watch, void *data)
 	{
+		if (!dbus_watch_get_enabled(watch) || dbus_watch_get_data(watch) != NULL)
+			return true;
+
 		int events = 0;
 		int fd = dbus_watch_get_unix_fd(watch);
 		unsigned int flags = dbus_watch_get_flags(watch);
@@ -86,7 +89,7 @@ namespace Connection {
 		dbus_timeout_handle(timeout);
 	}
 
-	static void timer_free (void *data)
+	static void timer_free(void *data)
 	{
 		uv_timer_t *timer = (uv_timer_t *)data;
 		timer->data =  NULL;
@@ -95,10 +98,12 @@ namespace Connection {
 	}
 
 	static dbus_bool_t timeout_add(DBusTimeout *timeout, void *data)
-	{
+	{ 
+		if (!dbus_timeout_get_enabled(timeout) || dbus_timeout_get_data(timeout) != NULL)
+			return true;
+
 		uv_timer_t *timer = new uv_timer_t;
 		timer->data = timeout;
-		printf("ADD TIMER\n");
 
 		// Initializing timer
 		uv_timer_init(uv_default_loop(), timer);
@@ -112,7 +117,6 @@ namespace Connection {
 	static void timeout_remove(DBusTimeout *timeout, void *data)
 	{
 		uv_timer_t *timer = (uv_timer_t *)dbus_timeout_get_data(timeout);
-		printf("STOP TIMER\n");
 
 		// Stop timer
 		uv_timer_stop(timer);
@@ -123,7 +127,7 @@ namespace Connection {
 
 	static void timeout_handle(DBusTimeout *timeout, void *data)
 	{
-		if (dbus_timeout_get_enabled (timeout))
+		if (dbus_timeout_get_enabled(timeout))
 			timeout_add(timeout, data);
 		else
 			timeout_remove(timeout, data);
@@ -133,7 +137,6 @@ namespace Connection {
 	{
 		uv_async_t *connection_loop = (uv_async_t *)data;
 		uv_async_send(connection_loop);
-		printf("WAKEUP\n");
 	}
 
 	static void connection_loop(uv_async_t *connection_loop, int status)
@@ -142,11 +145,12 @@ namespace Connection {
 		dbus_connection_read_write(connection, 0);
 
 		while(dbus_connection_dispatch(connection) == DBUS_DISPATCH_DATA_REMAINS);
-		printf("LOOP\n");
 	}
 
 	void Init(DBusConnection *connection)
 	{
+		dbus_connection_set_exit_on_disconnect(connection, false);
+
 		// Initializing watcher
 		dbus_connection_set_watch_functions(connection, watch_add, watch_remove, watch_handle, NULL, NULL);
 
@@ -157,11 +161,9 @@ namespace Connection {
 		uv_async_t *connection_loop_handle = new uv_async_t;
 		connection_loop_handle->data = (void *)connection;
 		uv_async_init(uv_default_loop(), connection_loop_handle, connection_loop);
-		uv_unref((uv_handle_t *)connection_loop_handle);
+		//uv_unref((uv_handle_t *)connection_loop_handle);
 
 		dbus_connection_set_wakeup_main_function(connection, connection_wakeup, connection_loop_handle, free);
-
-		printf("INIT\n");
 	}
 
 }
