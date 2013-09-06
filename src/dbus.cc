@@ -61,6 +61,7 @@ namespace NodeDBus {
 		data->callback->Holder.Dispose();
 		data->callback->cb.Dispose();
 
+		delete data->callback;
 		delete data;
 	}
 
@@ -120,7 +121,11 @@ namespace NodeDBus {
 		String::Utf8Value interface_name(args[3]->ToString());
 		String::Utf8Value method(args[4]->ToString());
 		String::Utf8Value signature(args[5]->ToString());
-		Local<Function> callback = Local<Function>::Cast(args[7]);
+		Local<Function> callback = Local<Function>::Cast(args[8]);
+		int timeout = -1;
+
+		if (args[6]->IsInt32())
+			timeout = args[6]->Int32Value();
 
 		// Get bus from internal field
 		BusObject *bus = (BusObject *) External::Unwrap(bus_object->GetInternalField(0));
@@ -132,11 +137,11 @@ namespace NodeDBus {
 		DBusMessage *message = dbus_message_new_method_call(*service_name, *object_path, *interface_name, *method);
 
 		// Preparing method arguments
-		if (args[6]->IsObject()) {
+		if (args[7]->IsObject()) {
 			DBusMessageIter iter;
 			DBusSignatureIter siter;
 
-			Local<Array> argument_arr = Local<Array>::Cast(args[6]);
+			Local<Array> argument_arr = Local<Array>::Cast(args[7]);
 
 			// Initializing augument message
 			dbus_message_iter_init_append(message, &iter); 
@@ -146,6 +151,7 @@ namespace NodeDBus {
 				printf("Invalid signature: %s\n", error.message);
 			}
 
+			// Getting all signatures
 			dbus_signature_iter_init(&siter, *signature);
 			for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 				char *arg_sig = dbus_signature_iter_get_signature(&siter);
@@ -162,7 +168,7 @@ namespace NodeDBus {
 
 		// Send message and call method
 		DBusPendingCall *pending;
-		if (!dbus_connection_send_with_reply(bus->connection, message, &pending, -1)) {
+		if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout)) {
 			if (message != NULL)
 				dbus_message_unref(message);
 
