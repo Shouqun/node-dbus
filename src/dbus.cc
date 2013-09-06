@@ -37,14 +37,15 @@ namespace NodeDBus {
 		TryCatch try_catch;
 
 		// Decode message for arguments
-		Handle<Value> arguments_object = Decoder::DecodeMessage(reply_message);
-		Handle<Value> *args = &arguments_object;
-		Local<Array> arguments = Local<Array>::Cast(arguments_object->ToObject());
+		Handle<Value> result = Decoder::DecodeMessage(reply_message);
+		Handle<Value> args[] = {
+			result
+		};
 
 		// Call
 		Handle<Object> holder = data->callback->Holder;
 		Local<Function> callback = Local<Function>::New(data->callback->cb);
-		callback->Call(holder, (int)arguments->Length(), args);
+		callback->Call(holder, 1, args);
 
 		// Release
 		dbus_message_unref(reply_message);
