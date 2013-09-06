@@ -33,7 +33,10 @@ namespace Introspect {
 
 		if (strcmp(name, "node") == 0) {
 
-			introspect_obj->obj = Object::New();
+			if (introspect_obj->current_class == INTROSPECT_NONE) {
+				introspect_obj->obj = Object::New();
+				introspect_obj->current_class = INTROSPECT_ROOT;
+			}
 		
 		} else if (strcmp(name, "interface") == 0) {
 
@@ -62,6 +65,20 @@ namespace Introspect {
 
 			introspect_obj->current_class = INTROSPECT_METHOD;
 			introspect_obj->current_method = method;
+
+		} else if (strcmp(name, "property") == 0) {
+
+			Local<Object> interface = introspect_obj->current_interface;
+			Local<Object> property_class = Local<Object>::Cast(interface->Get(String::NewSymbol("property")));
+
+			// Create a new object for this property
+			Local<Object> method = Object::New();
+			method->Set(String::NewSymbol("type"), String::New(GetAttribute(attrs, "type")));
+			method->Set(String::NewSymbol("access"), String::New(GetAttribute(attrs, "access")));
+
+			property_class->Set(String::New(GetAttribute(attrs, "name")), method);
+
+			introspect_obj->current_class = INTROSPECT_PROPERTY;
 
 		} else if (strcmp(name, "signal") == 0) {
 
