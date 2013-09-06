@@ -8,6 +8,7 @@
 #include "connection.h"
 #include "decoder.h"
 #include "encoder.h"
+#include "introspect.h"
 
 namespace NodeDBus {
  
@@ -187,11 +188,21 @@ namespace NodeDBus {
 		return Undefined();
 	}
 
+	Handle<Value> ParseIntrospectSource(const Arguments& args)
+	{
+		HandleScope scope;
+
+		String::Utf8Value source(args[0]->ToString());
+
+		return scope.Close(Introspect::CreateObject(*source));
+	}
+
 	static void init(Handle<Object> target) {
 		HandleScope scope;
 
 		NODE_SET_METHOD(target, "getBus", GetBus);
 		NODE_SET_METHOD(target, "callMethod", CallMethod);
+		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 	}
 
 	NODE_MODULE(dbus, init);

@@ -6,7 +6,8 @@
 				'src/dbus.cc',
 				'src/connection.cc',
 				'src/encoder.cc',
-				'src/decoder.cc'
+				'src/decoder.cc',
+				'src/introspect.cc'
 			],
 			'conditions': [
 				['OS=="linux"', {
