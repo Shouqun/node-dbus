@@ -211,6 +211,27 @@ namespace NodeDBus {
 		return Undefined();
 	}
 
+	Handle<Value> AddSignalFilter(const Arguments& args)
+	{
+		HandleScope scope;
+		DBusError error;
+
+		Local<Object> bus_object = args[0]->ToObject();
+		String::Utf8Value rule(args[1]->ToString());
+
+		BusObject *bus = (BusObject *) External::Unwrap(bus_object->GetInternalField(0));
+
+		dbus_error_init(&error);
+		dbus_bus_add_match(bus->connection, *rule, &error);
+		dbus_connection_flush(bus->connection);
+
+		if (dbus_error_is_set(&error)) {
+			printf("Failed to add rule: %s\n", error.message);
+		}
+
+		return Undefined();
+	}
+
 	static void init(Handle<Object> target) {
 		HandleScope scope;
 
@@ -218,6 +239,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "callMethod", CallMethod);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", SetSignalHandler);
+		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);
 	}
 
 	NODE_MODULE(dbus, init);

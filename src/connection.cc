@@ -152,19 +152,17 @@ namespace Connection {
 
 	static DBusHandlerResult signal_filter(DBusConnection *connection, DBusMessage *message, void *user_data)
 	{
-		DBusMessageIter iter;
-
 		// Ignore message if it's not a valid signal
-		if (message == NULL || dbus_message_get_type(message) != DBUS_MESSAGE_TYPE_SIGNAL) {
+		if (dbus_message_get_type(message) != DBUS_MESSAGE_TYPE_SIGNAL) {
 			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 		}
 
 		// Getting the interface name and signal name
-		const char *service_name = dbus_message_get_sender(message);
+		const char *sender = dbus_message_get_sender(message);
 		const char *object_path = dbus_message_get_path(message);
 		const char *interface = dbus_message_get_interface(message);
 		const char *signal_name = dbus_message_get_member(message);
-		if (interface == NULL || signal_name == NULL ) {
+		if (interface == NULL || signal_name == NULL) {
 			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 		}
 
@@ -174,19 +172,11 @@ namespace Connection {
 		HandleScope scope;
 
 		// Getting arguments of signal
-		unsigned int i = 0;
-		Handle<Array> arguments = Array::New();
-		if (dbus_message_iter_init(message, &iter)) {
-			do {
-				arguments->Set(i, Decoder::DecodeMessage(message));
-
-				i++;
-			} while(dbus_message_iter_has_next(&iter));
-		}
+		Handle<Value> arguments = Decoder::DecodeMessage(message);
 
 		Handle<Value> args[] = {
 			String::New(dbus_bus_get_unique_name(connection)),
-			String::New(service_name),
+			String::New(sender),
 			String::New(object_path),
 			String::New(interface),
 			String::New(signal_name),
@@ -220,6 +210,15 @@ namespace Connection {
 
 		// Initializing signal handler
 		dbus_connection_add_filter(connection, signal_filter, NULL, NULL);
+
+		// Add match for signal
+		DBusError error;
+		dbus_error_init(&error);
+		dbus_bus_add_match(bus->connection, "type='signal'", &error);
+		dbus_connection_flush(bus->connection);
+		if (dbus_error_is_set(&error)) {
+			printf("Failed to add rule: %s\n", error.message);
+		}
 	}
 
 }

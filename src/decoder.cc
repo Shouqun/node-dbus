@@ -122,7 +122,9 @@ namespace Decoder {
 	{
 		DBusMessageIter iter;
 
-		dbus_message_iter_init(message, &iter);
+		if (!dbus_message_iter_init(message, &iter)) {
+			return Undefined();
+		}
 
 		return DecodeMessageIter(&iter);
 	}

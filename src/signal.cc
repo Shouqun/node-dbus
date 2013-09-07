@@ -24,7 +24,7 @@ namespace Signal {
 		signal_handler->cb->Call(signal_handler->Holder, 6, args);
 
 		if (try_catch.HasCaught()) {
-			printf("Ooops, Exception on call the callback\n");
+			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
 		}
 	}
 
