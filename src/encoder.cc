@@ -11,6 +11,25 @@ namespace Encoder {
 	using namespace v8;
 	using namespace std;
 
+	char *GetSignatureFromV8Type(Local<Value>& value)
+	{
+		if (value->IsTrue() || value->IsFalse() || value->IsBoolean() ) {
+			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
+		} else if (value->IsInt32()) {
+			return const_cast<char*>(DBUS_TYPE_INT32_AS_STRING);
+		} else if (value->IsUint32()) {
+			return const_cast<char*>(DBUS_TYPE_UINT32_AS_STRING);
+		} else if (value->IsNumber()) {
+			return const_cast<char*>(DBUS_TYPE_DOUBLE_AS_STRING);
+		} else if (value->IsString()) {
+			return const_cast<char*>(DBUS_TYPE_STRING_AS_STRING);
+		} else if (value->IsArray()) {
+			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING);
+		} else {
+			return NULL;
+		}
+	}
+
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, char *signature)
 	{
 		DBusSignatureIter siter;

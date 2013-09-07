@@ -19,7 +19,6 @@ namespace Decoder {
 			dbus_bool_t value = false;
 			dbus_message_iter_get_basic(iter, &value);
 			return Boolean::New(value);
-			break;
 		}
 
 		case DBUS_TYPE_BYTE:
@@ -33,7 +32,6 @@ namespace Decoder {
 			dbus_uint64_t value = 0;
 			dbus_message_iter_get_basic(iter, &value);
 			return Number::New(value);
-			break;
 		}
 
 		case DBUS_TYPE_DOUBLE: 
@@ -41,7 +39,6 @@ namespace Decoder {
 			double value = 0;
 			dbus_message_iter_get_basic(iter, &value);
 			return Number::New(value);
-			break;
 		}
 
 		case DBUS_TYPE_OBJECT_PATH:
@@ -51,7 +48,6 @@ namespace Decoder {
 			const char *value;
 			dbus_message_iter_get_basic(iter, &value); 
 			return String::New(value);
-			break;
 		}
 
 		case DBUS_TYPE_ARRAY:
@@ -107,6 +103,14 @@ namespace Decoder {
 				return Array::New(0);
 
 			return result;
+		}
+
+		case DBUS_TYPE_VARIANT:
+		{
+			DBusMessageIter internal_iter;
+			dbus_message_iter_recurse(iter, &internal_iter);
+
+			return DecodeMessageIter(&internal_iter);
 		}
 
 		}
