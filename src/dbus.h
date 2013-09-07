@@ -6,6 +6,10 @@
 
 namespace NodeDBus {
 
+	using namespace node;
+	using namespace v8;
+	using namespace std;
+
 #define NATIVE_NODE_DEFINE_CONSTANT(target, name, constant)					\
 	(target)->Set(v8::String::NewSymbol(name),							\
 	v8::Integer::New(constant),											\
@@ -42,6 +46,8 @@ namespace NodeDBus {
 		std::string object_path;
 		std::string interface;
 	} InterfaceObject;
+
+	void EmitSignal(Handle<Value> args);
 }
 
 #endif

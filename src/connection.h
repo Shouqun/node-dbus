@@ -7,7 +7,7 @@ namespace Connection {
 	using namespace v8;
 	using namespace std;
 
-	void Init(DBusConnection *connection);
+	void Init(NodeDBus::BusObject *bus);
 }
 
 #endif

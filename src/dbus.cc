@@ -6,15 +6,12 @@
 
 #include "dbus.h"
 #include "connection.h"
+#include "signal.h"
 #include "decoder.h"
 #include "encoder.h"
 #include "introspect.h"
 
 namespace NodeDBus {
- 
-	using namespace node;
-	using namespace v8;
-	using namespace std;
 
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
@@ -90,9 +87,6 @@ namespace NodeDBus {
 		if (connection == NULL)
 			return ThrowException(Exception::Error(String::New("Failed to get bus object")));
 
-		// Initializing loop
-		Connection::Init(connection);
-
 		// Initializing connection object
 		Handle<ObjectTemplate> object_template = ObjectTemplate::New();
 		object_template->SetInternalFieldCount(1);
@@ -106,6 +100,10 @@ namespace NodeDBus {
 		// Create a JavaScript object to store bus object
 		Local<Object> bus_object = object_instance->NewInstance();
 		bus_object->SetInternalField(0, External::New(bus));
+		bus_object->Set(String::NewSymbol("uniqueName"), String::New(dbus_bus_get_unique_name(connection)));
+
+		// Initializing connection handler
+		Connection::Init(bus);
 
 		return scope.Close(bus_object);
 	}
@@ -204,12 +202,22 @@ namespace NodeDBus {
 		return scope.Close(Introspect::CreateObject(*source));
 	}
 
+	Handle<Value> SetSignalHandler(const Arguments& args)
+	{
+		HandleScope scope;
+
+		Signal::SetHandler(args.Holder(), Handle<Function>::Cast(args[0]));
+
+		return Undefined();
+	}
+
 	static void init(Handle<Object> target) {
 		HandleScope scope;
 
 		NODE_SET_METHOD(target, "getBus", GetBus);
 		NODE_SET_METHOD(target, "callMethod", CallMethod);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
+		NODE_SET_METHOD(target, "setSignalHandler", SetSignalHandler);
 	}
 
 	NODE_MODULE(dbus, init);

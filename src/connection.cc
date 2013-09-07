@@ -4,7 +4,10 @@
 #include <string>
 #include <dbus/dbus.h>
 
+#include "dbus.h"
+#include "decoder.h"
 #include "connection.h"
+#include "signal.h"
 
 namespace Connection {
 
@@ -147,8 +150,58 @@ namespace Connection {
 		while(dbus_connection_dispatch(connection) == DBUS_DISPATCH_DATA_REMAINS);
 	}
 
-	void Init(DBusConnection *connection)
+	static DBusHandlerResult signal_filter(DBusConnection *connection, DBusMessage *message, void *user_data)
 	{
+		DBusMessageIter iter;
+
+		// Ignore message if it's not a valid signal
+		if (message == NULL || dbus_message_get_type(message) != DBUS_MESSAGE_TYPE_SIGNAL) {
+			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		}
+
+		// Getting the interface name and signal name
+		const char *service_name = dbus_message_get_sender(message);
+		const char *object_path = dbus_message_get_path(message);
+		const char *interface = dbus_message_get_interface(message);
+		const char *signal_name = dbus_message_get_member(message);
+		if (interface == NULL || signal_name == NULL ) {
+			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		}
+
+		// Getting V8 context
+		Local<Context> context = Context::GetCurrent();
+		Context::Scope ctxScope(context); 
+		HandleScope scope;
+
+		// Getting arguments of signal
+		unsigned int i = 0;
+		Handle<Array> arguments = Array::New();
+		if (dbus_message_iter_init(message, &iter)) {
+			do {
+				arguments->Set(i, Decoder::DecodeMessage(message));
+
+				i++;
+			} while(dbus_message_iter_has_next(&iter));
+		}
+
+		Handle<Value> args[] = {
+			String::New(dbus_bus_get_unique_name(connection)),
+			String::New(service_name),
+			String::New(object_path),
+			String::New(interface),
+			String::New(signal_name),
+			arguments
+		};
+
+		Signal::EmitSignal(args);
+
+		return DBUS_HANDLER_RESULT_HANDLED;
+	}
+
+	void Init(NodeDBus::BusObject *bus)
+	{
+		DBusConnection *connection = bus->connection;
+
 		dbus_connection_set_exit_on_disconnect(connection, false);
 
 		// Initializing watcher
@@ -164,6 +217,9 @@ namespace Connection {
 		//uv_unref((uv_handle_t *)connection_loop_handle);
 
 		dbus_connection_set_wakeup_main_function(connection, connection_wakeup, connection_loop_handle, free);
+
+		// Initializing signal handler
+		dbus_connection_add_filter(connection, signal_filter, NULL, NULL);
 	}
 
 }
