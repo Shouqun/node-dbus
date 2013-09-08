@@ -10,6 +10,7 @@
 #include "decoder.h"
 #include "encoder.h"
 #include "introspect.h"
+#include "object_handler.h"
 
 namespace NodeDBus {
 
@@ -193,6 +194,29 @@ namespace NodeDBus {
 		return Undefined();
 	}
 
+	Handle<Value> RequestName(Arguments const &args)
+	{
+		if (!args[0]->IsObject()) {
+			return ThrowException(Exception::TypeError(
+				String::New("first argument must be a object (bus)")
+			));
+		}
+
+		if (!args[1]->IsString()) {
+			return ThrowException(Exception::TypeError(
+				String::New("first argument must be a string (Bus Name)")
+			));
+		}
+
+		BusObject *bus = (BusObject *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
+		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
+
+		// Request bus name
+		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
+
+		return Undefined();
+	}
+
 	Handle<Value> ParseIntrospectSource(const Arguments& args)
 	{
 		HandleScope scope;
@@ -232,11 +256,24 @@ namespace NodeDBus {
 		return Undefined();
 	}
 
+	Handle<Value> SetObjectHandler(const Arguments& args)
+	{
+		HandleScope scope;
+
+		ObjectHandler::SetHandler(args.Holder(), Handle<Function>::Cast(args[0]));
+
+		return Undefined();
+	}
+
 	static void init(Handle<Object> target) {
 		HandleScope scope;
 
 		NODE_SET_METHOD(target, "getBus", GetBus);
 		NODE_SET_METHOD(target, "callMethod", CallMethod);
+		NODE_SET_METHOD(target, "requestName", RequestName);
+		NODE_SET_METHOD(target, "registerObjectPath", ObjectHandler::RegisterObjectPath);
+		NODE_SET_METHOD(target, "sendMessageReply", ObjectHandler::SendMessageReply);
+		NODE_SET_METHOD(target, "setObjectHandler", SetObjectHandler);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", SetSignalHandler);
 		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);

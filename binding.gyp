@@ -8,7 +8,8 @@
 				'src/signal.cc',
 				'src/encoder.cc',
 				'src/decoder.cc',
-				'src/introspect.cc'
+				'src/introspect.cc',
+				'src/object_handler.cc'
 			],
 			'conditions': [
 				['OS=="linux"', {

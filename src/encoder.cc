@@ -184,6 +184,29 @@ namespace Encoder {
 
 			break;
 		}
+
+		case DBUS_TYPE_VARIANT:
+		{
+			DBusMessageIter sub_iter;
+			DBusSignatureIter var_siter;
+
+			char *var_sig = GetSignatureFromV8Type(value);
+			dbus_signature_iter_recurse(&siter, &var_siter);
+
+			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, var_sig, &sub_iter)) {
+				printf("Can't open contianer for VARIANT type\n");
+				return false;
+			}
+
+			if (!EncodeObject(value, &sub_iter, var_sig)) { 
+				dbus_message_iter_close_container(iter, &sub_iter);
+				return false;
+			}
+
+			dbus_message_iter_close_container(iter, &sub_iter);
+
+			break;
+		}
 		
 
 		}
