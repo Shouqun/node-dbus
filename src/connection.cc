@@ -33,6 +33,9 @@ namespace Connection {
 	{
 		uv_poll_t *watcher = (uv_poll_t *)data;
 
+		if (watcher == NULL)
+			return;
+
 		watcher->data = NULL;
 		free(watcher);
 	}
@@ -70,6 +73,9 @@ namespace Connection {
 	{
 		uv_poll_t *watcher = (uv_poll_t *)dbus_watch_get_data(watch);
 
+		if (watcher == NULL)
+			return;
+
 		// Stop watching
 		uv_ref((uv_handle_t *)watcher);
 		uv_poll_stop(watcher);
@@ -95,6 +101,10 @@ namespace Connection {
 	static void timer_free(void *data)
 	{
 		uv_timer_t *timer = (uv_timer_t *)data;
+
+		if (timer == NULL)
+			return;
+
 		timer->data =  NULL;
 
 		free(timer);
@@ -120,6 +130,9 @@ namespace Connection {
 	static void timeout_remove(DBusTimeout *timeout, void *data)
 	{
 		uv_timer_t *timer = (uv_timer_t *)dbus_timeout_get_data(timeout);
+
+		if (timer == NULL)
+			return;
 
 		// Stop timer
 		uv_timer_stop(timer);
@@ -172,11 +185,14 @@ namespace Connection {
 		HandleScope scope;
 
 		// Getting arguments of signal
-		Handle<Value> arguments = Decoder::DecodeMessage(message);
+		Handle<Value> arguments = Decoder::DecodeArguments(message);
+		Handle<Value> senderValue = Null();
+		if (sender)
+			senderValue = String::New(sender);
 
 		Handle<Value> args[] = {
 			String::New(dbus_bus_get_unique_name(connection)),
-			String::New(sender),
+			senderValue,
 			String::New(object_path),
 			String::New(interface),
 			String::New(signal_name),

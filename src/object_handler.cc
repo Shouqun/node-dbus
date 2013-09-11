@@ -19,6 +19,9 @@ namespace ObjectHandler {
 	// Initializing object handler table
 	static DBusHandlerResult MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data)
 	{
+		// Getting V8 context
+		Local<Context> context = Context::GetCurrent();
+		Context::Scope ctxScope(context); 
 		HandleScope scope;
 
 		const char *sender = dbus_message_get_sender(message);
@@ -37,9 +40,7 @@ namespace ObjectHandler {
 		message_object->SetInternalField(1, External::New(message));
 
 		// Getting arguments
-		Handle<Value> arguments = Decoder::DecodeMessage(message);
-		if (arguments->IsUndefined())
-			arguments = Array::New();
+		Handle<Value> arguments = Decoder::DecodeArguments(message);
 
 		Handle<Value> args[] = {
 			String::New(dbus_bus_get_unique_name(connection)),
@@ -78,6 +79,7 @@ namespace ObjectHandler {
 
 	static void _SendMessageReply(DBusConnection *connection, DBusMessage *message, Local<Value> reply_value, char *signature)
 	{
+		HandleScope scope;
 		DBusMessageIter iter;
 		DBusMessage *reply;
 		dbus_uint32_t serial = 0;
@@ -86,7 +88,6 @@ namespace ObjectHandler {
 
 		dbus_message_iter_init_append(reply, &iter);
 
-		//char *var_sig = const_cast<char *>(DBUS_TYPE_VARIANT_AS_STRING);
 		if (!Encoder::EncodeObject(reply_value, &iter, signature)) {
 			printf("Failed to encode reply value\n");
 		}
@@ -132,10 +133,12 @@ namespace ObjectHandler {
 		NodeDBus::BusObject *bus = (NodeDBus::BusObject *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
 
 		// Register object path
+		char *object_path = strdup(*String::Utf8Value(args[1]->ToString()));
 		dbus_bool_t ret = dbus_connection_register_object_path(bus->connection,
-			*String::Utf8Value(args[1]->ToString()),
+			object_path,
 			&vtable,
 			NULL);
+		delete object_path;
 		if (!ret) {
 			return ThrowException(Exception::Error(
 				String::New("Out of Memory")

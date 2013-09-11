@@ -242,11 +242,12 @@ namespace NodeDBus {
 
 		Local<Object> bus_object = args[0]->ToObject();
 		String::Utf8Value rule(args[1]->ToString());
+		char *rule_str = strdup(*rule);
 
 		BusObject *bus = (BusObject *) External::Unwrap(bus_object->GetInternalField(0));
 
 		dbus_error_init(&error);
-		dbus_bus_add_match(bus->connection, *rule, &error);
+		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
 
 		if (dbus_error_is_set(&error)) {

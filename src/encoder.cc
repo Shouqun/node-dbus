@@ -24,7 +24,12 @@ namespace Encoder {
 		} else if (value->IsString()) {
 			return const_cast<char*>(DBUS_TYPE_STRING_AS_STRING);
 		} else if (value->IsArray()) {
-			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING);
+			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
+		} else if (value->IsObject()) {
+			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING
+				DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+				DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
+				DBUS_DICT_ENTRY_END_CHAR_AS_STRING);
 		} else {
 			return NULL;
 		}
@@ -32,6 +37,7 @@ namespace Encoder {
 
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, char *signature)
 	{
+		HandleScope scope;
 		DBusSignatureIter siter;
 		int type;
 
@@ -75,12 +81,15 @@ namespace Encoder {
 		case DBUS_TYPE_SIGNATURE:
 		{
 			String::Utf8Value data_val(value->ToString());
-			char *data = *data_val;
+			char *data = strdup(*data_val);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				delete data;
 				printf("Failed to encode string value\n");
 				return false;
 			}
+
+			delete data;
 
 			break;
 		}
@@ -122,48 +131,58 @@ namespace Encoder {
 			// It's a dictionary
 			if (dbus_signature_iter_get_element_type(&siter) == DBUS_TYPE_DICT_ENTRY) {
 
-				Local<Object> value_object = value->ToObject();
-				DBusMessageIter subIter;
-				DBusSignatureIter dictSubSiter;
-
 				dbus_free(array_sig);
+
+				Local<Object> value_object = value->ToObject();
+				DBusSignatureIter dictSubSiter;
 
 				// Getting sub-signature object
 				dbus_signature_iter_recurse(&arraySiter, &dictSubSiter);
 				dbus_signature_iter_next(&dictSubSiter);
+				char *sig = dbus_signature_iter_get_signature(&dictSubSiter);
 
 				// process each elements
 				Local<Array> prop_names = value_object->GetPropertyNames();
 				unsigned int len = prop_names->Length();
 
+				bool failed = false;
 				for (unsigned int i = 0; i < len; ++i) {
 					DBusMessageIter dict_iter;
 
 					// Open dict entry container
 					if (!dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, NULL, &dict_iter)) {
 						printf("Can't open container for DICT-ENTRY\n");
-						return false;
+						failed = true;
+						break;
 					}
 
+					// Getting the key and value
 					Local<Value> prop_key = prop_names->Get(i);
-					char *prop_key_str = *String::Utf8Value(prop_key->ToString());
+					Local<Value> prop_value = value_object->Get(prop_key);
 
 					// Append the key
+					char *prop_key_str = strdup(*String::Utf8Value(prop_key->ToString()));
 					dbus_message_iter_append_basic(&dict_iter, DBUS_TYPE_STRING, &prop_key_str);
+					delete prop_key_str;
 
 					// Append the value
-					char *cstr = dbus_signature_iter_get_signature(&dictSubSiter);
-					if (!EncodeObject(value_object->Get(prop_key), &dict_iter, cstr)) {
+					if (!EncodeObject(prop_value, &dict_iter, sig)) {
+						dbus_message_iter_close_container(&subIter, &dict_iter); 
 						printf("Failed to encode element of dictionary\n");
-						return false;
+						failed = true;
+						break;
 					}
 
-					dbus_free(cstr);
 					dbus_message_iter_close_container(&subIter, &dict_iter); 
 				}
 
-				break;
+				dbus_free(sig);
+				dbus_message_iter_close_container(iter, &subIter);
 
+				if (failed) 
+					return false;
+
+				break;
 			}
 
 			if (!value->IsArray()) {
@@ -187,27 +206,65 @@ namespace Encoder {
 
 		case DBUS_TYPE_VARIANT:
 		{
-			DBusMessageIter sub_iter;
-			DBusSignatureIter var_siter;
+			DBusMessageIter subIter;
 
 			char *var_sig = GetSignatureFromV8Type(value);
-			dbus_signature_iter_recurse(&siter, &var_siter);
 
-			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, var_sig, &sub_iter)) {
+			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, var_sig, &subIter)) {
 				printf("Can't open contianer for VARIANT type\n");
 				return false;
 			}
 
-			if (!EncodeObject(value, &sub_iter, var_sig)) { 
-				dbus_message_iter_close_container(iter, &sub_iter);
+			if (!EncodeObject(value, &subIter, var_sig)) { 
+				dbus_message_iter_close_container(iter, &subIter);
 				return false;
 			}
 
-			dbus_message_iter_close_container(iter, &sub_iter);
+			dbus_message_iter_close_container(iter, &subIter);
 
 			break;
 		}
-		
+		case DBUS_TYPE_STRUCT:
+		{
+			DBusMessageIter subIter;
+			DBusSignatureIter structSiter;
+			
+			// Open array container to process elements in there
+			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_STRUCT, NULL, &subIter)) {
+				printf("Can't open container for Struct type\n");
+				return false; 
+			}
+
+			Local<Object> value_object = value->ToObject();
+
+			// Getting sub-signature object
+			dbus_signature_iter_recurse(&siter, &structSiter);
+
+			// process each elements
+			Local<Array> prop_names = value_object->GetPropertyNames();
+			unsigned int len = prop_names->Length();
+
+			for (unsigned int i = 0; i < len; ++i) {
+
+				char *sig = dbus_signature_iter_get_signature(&structSiter);
+
+				Local<Value> prop_key = prop_names->Get(i);
+
+				if (!EncodeObject(value_object->Get(prop_key), &subIter, sig)) {
+					printf("Failed to encode element of dictionary\n");
+					return false;
+				}
+
+				dbus_free(sig);
+
+				if (!dbus_signature_iter_next(&structSiter))
+					break;
+			}
+
+			dbus_message_iter_close_container(iter, &subIter); 
+
+			break;
+		}
 
 		}
 

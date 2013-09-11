@@ -8,6 +8,7 @@ namespace Decoder {
 	using namespace std;
 
 	Handle<Value> DecodeMessage(DBusMessage *message);
+	Handle<Value> DecodeArguments(DBusMessage *message);
 }
 
 #endif

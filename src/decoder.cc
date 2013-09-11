@@ -128,5 +128,23 @@ namespace Decoder {
 
 		return DecodeMessageIter(&iter);
 	}
+
+	Handle<Value> DecodeArguments(DBusMessage *message)
+	{
+		DBusMessageIter iter;
+		Handle<Array> result = Array::New();
+
+		if (dbus_message_iter_init(message, &iter)) {
+
+			unsigned int count = 0;
+
+			do {
+				result->Set(count, DecodeMessageIter(&iter));
+				count++;
+			} while(dbus_message_iter_next(&iter));
+		}
+
+		return result;
+	}
 }
 
