@@ -104,7 +104,21 @@ iface1.addProperty('JavaScriptOS', {
 	}
 });
 
+// Signal
+var counter = 0;
+iface1.addSignal('pump', {
+	types: [
+		DBus.Define(Number)
+	]
+});
+
 iface1.update();
+
+// Emit signal per one second
+setInterval(function() {
+	counter++;
+	iface1.emit('pump', counter);
+}, 1000);
 
 // Create second interface
 var iface2 = obj.createInterface('nodejs.dbus.ExampleService.Interface2');

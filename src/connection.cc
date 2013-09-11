@@ -199,7 +199,7 @@ namespace Connection {
 			arguments
 		};
 
-		Signal::EmitSignal(args);
+		Signal::DispatchSignal(args);
 
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}

@@ -7,8 +7,9 @@ namespace Signal {
 	using namespace v8;
 	using namespace std;
 
-	void EmitSignal(Handle<Value> args[]);
+	void DispatchSignal(Handle<Value> args[]);
 	void SetHandler(Handle<Object> Holder, Handle<Function> callback);
+	Handle<Value> EmitSignal(const Arguments& args);
 }
 
 #endif

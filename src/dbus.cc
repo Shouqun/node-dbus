@@ -278,6 +278,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", SetSignalHandler);
 		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);
+		NODE_SET_METHOD(target, "emitSignal", Signal::EmitSignal);
 	}
 
 	NODE_MODULE(dbus, init);
