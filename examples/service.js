@@ -18,7 +18,13 @@ iface1.addMethod('Ping', { out: DBus.Define(String) }, function(callback) {
 	callback('Pong!');
 });
 
-iface1.addMethod('Equal', { in: [ DBus.Define(Number), DBus.Define(Number) ], out: DBus.Define(Boolean) }, function(a, b, callback) {
+iface1.addMethod('Equal', {
+	in: [
+		DBus.Define(Number),
+		DBus.Define(Number)
+	],
+	out: DBus.Define(Boolean)
+}, function(a, b, callback) {
 
 	if (a == b)
 		callback(true);
@@ -66,16 +72,36 @@ iface1.addMethod('GetContacts', { out: DBus.Define(Object, 'contacts') }, functi
 	});
 });
 
-iface1.addProperty('Author', { out: DBus.Define(String) }, function(callback) {
-	callback('Fred Chien');
+// Writable property
+var author = 'Fred Chien';
+iface1.addProperty('Author', {
+	type: DBus.Define(String),
+	getter: function(callback) {
+		callback(author);
+	},
+	setter: function(value, complete) {
+		author = value;
+
+		complete();
+	}
 });
 
-iface1.addProperty('URL', { out: DBus.Define(String) }, function(callback) {
-	callback('http://stem.mandice.org/');
+// Read-only property
+var url = 'http://stem.mandice.org';
+iface1.addProperty('URL', {
+	type: DBus.Define(String),
+	getter: function(callback) {
+		callback(url);
+	}
 });
 
-iface1.addProperty('JavaScriptOS', { out: DBus.Define(String) }, function(callback) {
-	callback('Stem OS');
+// Read-only property
+var jsOS = 'Stem OS';
+iface1.addProperty('JavaScriptOS', {
+	type: DBus.Define(String),
+	getter: function(callback) {
+		callback(jsOS);
+	}
 });
 
 iface1.update();
