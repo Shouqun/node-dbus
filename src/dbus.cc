@@ -1,7 +1,7 @@
 #include <v8.h>
 #include <node.h>
 #include <uv.h>
-#include <string>
+#include <cstring>
 #include <dbus/dbus.h>
 
 #include "dbus.h"

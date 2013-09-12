@@ -1,6 +1,6 @@
 #include <v8.h>
 #include <node.h>
-#include <string>
+#include <cstring>
 #include <expat.h>
 #include <dbus/dbus.h>
 

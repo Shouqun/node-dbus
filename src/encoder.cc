@@ -1,6 +1,6 @@
 #include <v8.h>
 #include <node.h>
-#include <string>
+#include <cstring>
 #include <dbus/dbus.h>
 
 #include "encoder.h"

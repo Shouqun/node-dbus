@@ -17,6 +17,7 @@
 						'LIB_EXPAT=expat'
 					],
 					'cflags': [
+						'-std=gnu++0x',
 						'<!@(pkg-config --cflags dbus-1)',
 						'<!@(pkg-config --cflags expat)'
 					],
