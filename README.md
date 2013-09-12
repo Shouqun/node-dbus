@@ -1,8 +1,8 @@
 # node-dbus  
-node-dbus is a D-Bus binding for node has the following capabilities: (1) call D-Bus methods, (2) asynchronous method call, (3) receive D-Bus signals, (4) export D-Bus services
+node-dbus is a D-Bus binding for Node.js.
 
 ## How To Build
-To build, do:  `node-gyp configure build`
+To build, do: `node-gyp configure build`
 
 ## License 
 
