@@ -14,6 +14,10 @@ iface1.addMethod('Hello', { out: DBus.Define(String) }, function(callback) {
 	callback('Hello There!');
 });
 
+iface1.addMethod('SendObject', { in: [ DBus.Define(Object) ], out: DBus.Define(Object) }, function(obj, callback) {
+	callback(obj);
+});
+
 iface1.addMethod('Ping', { out: DBus.Define(String) }, function(callback) {
 	callback('Pong!');
 });

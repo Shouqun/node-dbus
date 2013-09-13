@@ -33,7 +33,6 @@ namespace NodeDBus {
 		Local<Context> context = Context::GetCurrent();
 		Context::Scope ctxScope(context);
 		HandleScope scope;
-		TryCatch try_catch;
 
 		// Decode message for arguments
 		Handle<Value> result = Decoder::DecodeMessage(reply_message);
@@ -43,8 +42,15 @@ namespace NodeDBus {
 
 		// Call
 		Handle<Object> holder = data->callback->Holder;
-		Local<Function> callback = Local<Function>::New(data->callback->cb);
+		Handle<Function> callback = Local<Function>::New(data->callback->cb);
+
+		TryCatch try_catch;
+
 		callback->Call(holder, 1, args);
+
+		if (try_catch.HasCaught()) {
+			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
+		}
 
 		// Release
 		dbus_message_unref(reply_message);
@@ -147,7 +153,7 @@ namespace NodeDBus {
 
 			// Initializing signature
 			if (!dbus_signature_validate(*signature, &error)) {
-				printf("Invalid signature: %s\n", error.message);
+				return ThrowException(Exception::Error(String::New(error.message)));
 			}
 
 			// Getting all signatures
@@ -196,6 +202,8 @@ namespace NodeDBus {
 
 	Handle<Value> RequestName(Arguments const &args)
 	{
+		HandleScope scope;
+
 		if (!args[0]->IsObject()) {
 			return ThrowException(Exception::TypeError(
 				String::New("first argument must be a object (bus)")

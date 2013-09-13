@@ -87,7 +87,6 @@ namespace ObjectHandler {
 		reply = dbus_message_new_method_return(message);
 
 		dbus_message_iter_init_append(reply, &iter);
-
 		if (!Encoder::EncodeObject(reply_value, &iter, signature)) {
 			printf("Failed to encode reply value\n");
 		}

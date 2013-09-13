@@ -62,7 +62,7 @@ namespace Decoder {
 			if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_DICT_ENTRY) {
 
 				// Create a object
-				Local<Object> result = Object::New();
+				Handle<Object> result = Object::New();
 				do {
 
 					// Getting sub iterator
@@ -85,7 +85,7 @@ namespace Decoder {
 			}
 
 			// Create an array
-			Local<Array> result = Array::New(0);
+			Handle<Array> result = Array::New(0);
 			do {
 
 				// Getting element
@@ -116,7 +116,7 @@ namespace Decoder {
 
 		}
 
-		return Undefined();
+		return Null();
 	}
 
 	Handle<Value> DecodeMessage(DBusMessage *message)
