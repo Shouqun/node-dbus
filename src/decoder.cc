@@ -71,6 +71,7 @@ namespace Decoder {
 
 					// Getting key and value
 					Handle<Value> key = DecodeMessageIter(&dict_entry_iter);
+					dbus_message_iter_next(&dict_entry_iter);
 					Handle<Value> value = DecodeMessageIter(&dict_entry_iter);
 					if (key->IsUndefined())
 						continue;
