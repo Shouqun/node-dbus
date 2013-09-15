@@ -135,6 +135,7 @@ namespace Introspect {
 
 	Handle<Value> CreateObject(const char *source)
 	{
+		HandleScope scope;
 		IntrospectObject *introspect_obj = new IntrospectObject;
 		introspect_obj->current_class = INTROSPECT_NONE;
 
@@ -145,14 +146,16 @@ namespace Introspect {
 
 		// Start to parse source
 		if (!XML_Parse(parser, source, strlen(source), true)) {
-			return Undefined();
+			return Null();
 		}
 
-		Local<Object> obj = introspect_obj->obj;
+		XML_ParserFree(parser);
+
+		Handle<Object> obj = introspect_obj->obj;
 
 		delete introspect_obj;
 
-		return obj;
+		return scope.Close(obj);
 	}
 
 }

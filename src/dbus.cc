@@ -14,6 +14,18 @@
 
 namespace NodeDBus {
 
+	static void WeakMethodCallback(Persistent<Value> object, void *parameter)
+	{
+		DBusAsyncData *data = (DBusAsyncData *)parameter;
+
+		// TODO: Try to make sure memory does not leak
+		data->callback->Holder.Dispose();
+		data->callback->Holder.Clear();
+		data->callback->cb.Dispose();
+		data->callback->cb.Clear();
+		delete data->callback;
+	}
+
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
 		DBusError error;
@@ -42,7 +54,8 @@ namespace NodeDBus {
 
 		// Call
 		Handle<Object> holder = data->callback->Holder;
-		Handle<Function> callback = Local<Function>::New(data->callback->cb);
+		Handle<Function> callback = data->callback->cb;
+		data->callback->cb.MakeWeak(data, WeakMethodCallback);
 
 		TryCatch try_catch;
 
@@ -55,17 +68,12 @@ namespace NodeDBus {
 		// Release
 		dbus_message_unref(reply_message);
 		dbus_pending_call_unref(pending);
-		
 	}
 
 	static void method_free(void *user_data)
 	{
 		DBusAsyncData *data = (DBusAsyncData *)user_data;
-		
-		data->callback->Holder.Dispose();
-		data->callback->cb.Dispose();
 
-		delete data->callback;
 		delete data;
 	}
 

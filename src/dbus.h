@@ -16,16 +16,16 @@ namespace NodeDBus {
 	static_cast<v8::PropertyAttribute>(v8::ReadOnly|v8::DontDelete))
 
 	struct NodeCallback {
-		v8::Persistent<v8::Object> Holder;
-		v8::Persistent<v8::Function> cb;
+		Persistent<Object> Holder;
+		Persistent<Function> cb;
 
 		~NodeCallback() {
-			Holder.Dispose();
-			cb.Dispose();
+//			Holder.Dispose();
+//			cb.Dispose();
 		}
 	};
 
-	typedef struct {
+	typedef struct DBusAsyncData{
 		struct NodeCallback *callback;
 		DBusPendingCall *pending;
 	} DBusAsyncData;
