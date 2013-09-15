@@ -35,7 +35,7 @@ namespace ObjectHandler {
 		Persistent<ObjectTemplate> object_instance = Persistent<ObjectTemplate>::New(object_template);
 
 		// Store connection and message
-		Local<Object> message_object = object_instance->NewInstance();
+		Handle<Object> message_object = object_instance->NewInstance();
 		message_object->SetInternalField(0, External::New(connection));
 		message_object->SetInternalField(1, External::New(message));
 
@@ -52,6 +52,9 @@ namespace ObjectHandler {
 			arguments
 		};
 
+		// Keep message live for reply
+		dbus_message_ref(message);
+
 		TryCatch try_catch;
 
 		object_handler->cb->Call(object_handler->Holder, 7, args);
@@ -60,7 +63,7 @@ namespace ObjectHandler {
 			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
 		}
 
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		return DBUS_HANDLER_RESULT_HANDLED;
 	}
 
 	static void UnregisterMessageHandler(DBusConnection *connection, void *user_data)

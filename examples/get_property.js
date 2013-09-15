@@ -18,4 +18,9 @@ bus.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'n
 		console.log(value);
 	});
 
+	// Get all properties
+	iface.getProperties(function(props) {
+		console.log(props);
+	});
+
 });
