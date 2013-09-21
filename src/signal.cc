@@ -4,7 +4,6 @@
 #include <dbus/dbus.h>
 
 #include "dbus.h"
-#include "callback.h"
 #include "signal.h"
 #include "encoder.h"
 
@@ -25,7 +24,7 @@ namespace Signal {
 
 		TryCatch try_catch;
 
-		signal_handler->cb->Call(signal_handler->cb, 6, args);
+		MakeCallback(signal_handler->cb, signal_handler->cb, 6, args);
 
 		if (try_catch.HasCaught()) {
 			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));

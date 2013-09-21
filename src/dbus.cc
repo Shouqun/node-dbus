@@ -183,12 +183,8 @@ namespace NodeDBus {
 		// Set callback for waiting
 		DBusAsyncData *data = new DBusAsyncData;
 		data->pending = pending;
-//		data->callback = new Callback::CallbackData();
-
 		Local<Function> callback = Local<Function>::Cast(args[8]);
-		//data->callback->callback = Persistent<Function>::New(callback);
 		data->callback = Persistent<Function>::New(callback);
-
 		if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
 			if (message != NULL)
 				dbus_message_unref(message);
