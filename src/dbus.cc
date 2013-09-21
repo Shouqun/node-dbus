@@ -5,6 +5,7 @@
 #include <dbus/dbus.h>
 
 #include "dbus.h"
+#include "callback.h"
 #include "connection.h"
 #include "signal.h"
 #include "decoder.h"
@@ -13,37 +14,6 @@
 #include "object_handler.h"
 
 namespace NodeDBus {
-
-	static void InvokeCallback(uv_work_t* req)
-	{
-	}
-
-	static void ReleaseCallback(uv_work_t* req)
-	{
-		HandleScope scope;
-		CallbackData *data = static_cast<CallbackData *>(req->data);
-
-		// Call
-		TryCatch try_catch;
-
-		// Preparing arguments
-		Handle<Value> args[data->argc];
-		for (unsigned int i = 0; i < data->argc; ++i) {
-			args[i] = data->argv->Get(i);
-		}
-
-		data->callback->Call(data->callback, data->argc, args);
-
-		if (try_catch.HasCaught()) {
-			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
-		}
-
-		data->argv.Clear();
-		data->callback.Clear();
-		delete data;
-
-		req->data = NULL;
-	}
 
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
@@ -72,17 +42,15 @@ namespace NodeDBus {
 		dbus_message_unref(reply_message);
 		dbus_pending_call_unref(pending);
 
-		// Preparing callback
-		CallbackData *callback_data = new CallbackData();
+		// Preparing arguments for callback
+		Callback::CallbackData *callback_data = new Callback::CallbackData();
 		callback_data->callback = data->callback;
 		callback_data->argc = 1;
 		callback_data->argv = Persistent<Object>::New(Object::New());
 		callback_data->argv->Set(0, result);
 
-		// Invoke callback
-		uv_work_t *req = new uv_work_t();
-		req->data = callback_data;
-		uv_queue_work(uv_default_loop(), req, InvokeCallback, (uv_after_work_cb)ReleaseCallback);
+		// Invoke callback on the next tick
+		Callback::Invoke(callback_data);
 	}
 
 	static void method_free(void *user_data)
@@ -90,6 +58,7 @@ namespace NodeDBus {
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
 
 		data->callback.Clear();
+		data->pending = NULL;
 		delete data->method;
 		delete data;
 	}
@@ -318,6 +287,12 @@ namespace NodeDBus {
 	Handle<Value> SetObjectHandler(const Arguments& args)
 	{
 		HandleScope scope;
+
+		if (!args[0]->IsFunction()) {
+			return ThrowException(Exception::TypeError(
+				String::New("first argument must be a function")
+			));
+		}
 
 		ObjectHandler::SetHandler(args.Holder(), Handle<Function>::Cast(args[0]));
 

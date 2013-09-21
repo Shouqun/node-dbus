@@ -163,7 +163,9 @@ namespace ObjectHandler {
 		DBusConnection *connection = (DBusConnection *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
 		DBusMessage *message = (DBusMessage *) External::Unwrap(args[0]->ToObject()->GetInternalField(1));
 
-		_SendMessageReply(connection, message, args[1], *String::Utf8Value(args[2]->ToString()));
+		char *signature = strdup(*String::Utf8Value(args[2]->ToString()));
+		_SendMessageReply(connection, message, args[1], signature);
+		delete signature;
 
 		return Undefined();
 	}

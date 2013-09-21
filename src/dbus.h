@@ -31,12 +31,6 @@ namespace NodeDBus {
 		DBusPendingCall *pending;
 	} DBusAsyncData;
 
-	struct CallbackData {
-		Persistent<Function> callback;
-		unsigned int argc;
-		Persistent<Object> argv;
-	};
-
 	typedef enum {
 		NODE_DBUS_BUS_SYSTEM,
 		NODE_DBUS_BUS_SESSION

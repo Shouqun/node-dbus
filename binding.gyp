@@ -4,6 +4,7 @@
 			'target_name': 'dbus',
 			'sources': [
 				'src/dbus.cc',
+				'src/callback.cc',
 				'src/connection.cc',
 				'src/signal.cc',
 				'src/encoder.cc',
