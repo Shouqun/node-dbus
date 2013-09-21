@@ -12,11 +12,8 @@ namespace Decoder {
 	using namespace std;
 
 	Handle<Value> DecodeMessageIter(DBusMessageIter *iter, char *signature)
-//	Handle<Value> DecodeMessageIter(DBusMessageIter *iter)
 	{
 		DBusSignatureIter siter;
-
-//		printf("DDD %s\n", dbus_message_iter_get_signature(iter));
 
 		// Get type of current value
 		switch(dbus_message_iter_get_arg_type(iter)) {
@@ -53,7 +50,6 @@ namespace Decoder {
 		{
 			const char *value;
 			dbus_message_iter_get_basic(iter, &value); 
-//			printf("STR=%s\n", value);
 			return String::New(value);
 		}
 
@@ -108,29 +104,21 @@ namespace Decoder {
 					dbus_message_iter_recurse(&internal_iter, &dict_entry_iter);
 
 					// Getting key
-					//printf("K %s\n", dbus_message_iter_get_signature(&dict_entry_iter));
-					//Handle<Value> key = DecodeMessageIter(&dict_entry_iter);
-					//Handle<Value> key = DecodeMessageIter(&dict_entry_iter, (char *)(DBUS_TYPE_STRING_AS_STRING "\0"));
 					Handle<Value> key = DecodeMessageIter(&dict_entry_iter, dbus_message_iter_get_signature(&dict_entry_iter));
 					if (key->IsUndefined())
 						continue;
 
 					// Try to get next element
+					Handle<Value> value;
 					if (dbus_message_iter_next(&dict_entry_iter)) {
-
 						// Getting value
-//						Handle<Value> value = DecodeMessageIter(&dict_entry_iter);
-	//					Handle<Value> value = DecodeMessageIter(&dict_entry_iter, (char *)(DBUS_TYPE_VARIANT_AS_STRING "\0"));
-						Handle<Value> value = DecodeMessageIter(&dict_entry_iter, dbus_message_iter_get_signature(&dict_entry_iter));
-
-//						printf("%s=%s\n", *String::Utf8Value(key->ToString()), *String::Utf8Value(value->ToString()));
-//						printf("T=%s\n", dbus_message_iter_get_signature(&dict_entry_iter));
-	//					printf("S=%s\n\n", signature);
-
-						// Append a property
-						result->Set(key, value); 
-
+						value = DecodeMessageIter(&dict_entry_iter, dbus_message_iter_get_signature(&dict_entry_iter));
+					} else {
+						value = Undefined();
 					}
+
+					// Append a property
+					result->Set(key, value); 
 
 				} while(dbus_message_iter_next(&internal_iter));
 
@@ -143,20 +131,10 @@ namespace Decoder {
 			if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_INVALID)
 				return result;
 
-			// Getting signature
-/*
-			char *sig;
-			DBusSignatureIter Siter;
-			dbus_signature_iter_recurse(&siter, &Siter);
-			sig = dbus_signature_iter_get_signature(&Siter);
-			printf("A %s\n", sig);
-*/
 			do {
 
 				// Getting element
 				Handle<Value> value = DecodeMessageIter(&internal_iter, dbus_message_iter_get_signature(&internal_iter));
-				//Handle<Value> value = DecodeMessageIter(&internal_iter, sig);
-				//Handle<Value> value = DecodeMessageIter(&internal_iter);
 				if (value->IsUndefined())
 					continue;
 
@@ -173,10 +151,8 @@ namespace Decoder {
 		{
 			DBusMessageIter internal_iter;
 			dbus_message_iter_recurse(iter, &internal_iter);
-//			printf("%s\n", dbus_message_iter_get_signature(&internal_iter));
 
 			return DecodeMessageIter(&internal_iter, dbus_message_iter_get_signature(&internal_iter));
-			//return DecodeMessageIter(&internal_iter);
 		}
 
 		default:
@@ -202,7 +178,8 @@ namespace Decoder {
 
 		signature = (char *)dbus_message_get_signature(message);
 		Handle<Value> obj = DecodeMessageIter(&iter, signature);
-		//Handle<Value> obj = DecodeMessageIter(&iter);
+		if (obj->IsUndefined())
+			return Undefined();
 
 		return scope.Close(obj);
 	}
@@ -216,21 +193,22 @@ namespace Decoder {
 		if (!dbus_message_iter_init(message, &iter))
 			return scope.Close(result);
 
-		unsigned int count = 0;
-		char *signature;
-
-		if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR) {
+		if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR)
 			return scope.Close(result);
-		}
 
 		// No argument
-		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID) {
+		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID)
 			return scope.Close(result);
-		}
+
+		unsigned int count = 0;
+		char *signature = NULL;
 
 		do {
-			signature = (char *)dbus_message_get_signature(message);
+			signature = dbus_message_iter_get_signature(&iter);
 			Handle<Value> value = DecodeMessageIter(&iter, signature);
+			if (value->IsUndefined())
+				break;
+
 			result->Set(count, value);
 
 			count++;

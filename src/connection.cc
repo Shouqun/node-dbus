@@ -2,6 +2,7 @@
 #include <v8.h>
 #include <node.h>
 #include <string>
+#include <stdlib.h>
 #include <dbus/dbus.h>
 
 #include "dbus.h"
@@ -17,7 +18,7 @@ namespace Connection {
 
 	static void watcher_handle(uv_poll_t *watcher, int status, int events)
 	{
-		DBusWatch *watch = (DBusWatch *)watcher->data;
+		DBusWatch *watch = static_cast<DBusWatch *>(watcher->data);
 		unsigned int flags = 0;
 
 		if (events & UV_READABLE)
@@ -31,7 +32,7 @@ namespace Connection {
 
 	static void watcher_free(void *data)
 	{
-		uv_poll_t *watcher = (uv_poll_t *)data;
+		uv_poll_t *watcher = static_cast<uv_poll_t *>(data);
 
 		if (watcher == NULL)
 			return;
@@ -71,7 +72,7 @@ namespace Connection {
 
 	static void watch_remove(DBusWatch *watch, void *data)
 	{
-		uv_poll_t *watcher = (uv_poll_t *)dbus_watch_get_data(watch);
+		uv_poll_t *watcher = static_cast<uv_poll_t *>(dbus_watch_get_data(watch));
 
 		if (watcher == NULL)
 			return;
@@ -94,13 +95,13 @@ namespace Connection {
 
 	static void timer_handle(uv_timer_t *timer, int status)
 	{
-		DBusTimeout *timeout = (DBusTimeout*)timer->data;
+		DBusTimeout *timeout = static_cast<DBusTimeout *>(timer->data);
 		dbus_timeout_handle(timeout);
 	}
 
 	static void timer_free(void *data)
 	{
-		uv_timer_t *timer = (uv_timer_t *)data;
+		uv_timer_t *timer = static_cast<uv_timer_t *>(data);
 
 		if (timer == NULL)
 			return;
@@ -129,7 +130,7 @@ namespace Connection {
 
 	static void timeout_remove(DBusTimeout *timeout, void *data)
 	{
-		uv_timer_t *timer = (uv_timer_t *)dbus_timeout_get_data(timeout);
+		uv_timer_t *timer = static_cast<uv_timer_t *>(dbus_timeout_get_data(timeout));
 
 		if (timer == NULL)
 			return;
@@ -151,13 +152,13 @@ namespace Connection {
 
 	static void connection_wakeup(void *data)
 	{
-		uv_async_t *connection_loop = (uv_async_t *)data;
+		uv_async_t *connection_loop = static_cast<uv_async_t *>(data);
 		uv_async_send(connection_loop);
 	}
 
 	static void connection_loop(uv_async_t *connection_loop, int status)
 	{
-		DBusConnection *connection = (DBusConnection *)connection_loop->data;
+		DBusConnection *connection = static_cast<DBusConnection *>(connection_loop->data);
 		dbus_connection_read_write(connection, 0);
 
 		while(dbus_connection_dispatch(connection) == DBUS_DISPATCH_DATA_REMAINS);

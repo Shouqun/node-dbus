@@ -132,7 +132,7 @@ namespace ObjectHandler {
 			));
 		}
 
-		NodeDBus::BusObject *bus = (NodeDBus::BusObject *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
+		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
 
 		// Register object path
 		char *object_path = strdup(*String::Utf8Value(args[1]->ToString()));
@@ -140,7 +140,7 @@ namespace ObjectHandler {
 			object_path,
 			&vtable,
 			NULL);
-		delete object_path;
+		free(object_path);
 		if (!ret) {
 			return ThrowException(Exception::Error(
 				String::New("Out of Memory")
@@ -160,12 +160,12 @@ namespace ObjectHandler {
 			));
 		}
 
-		DBusConnection *connection = (DBusConnection *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
-		DBusMessage *message = (DBusMessage *) External::Unwrap(args[0]->ToObject()->GetInternalField(1));
+		DBusConnection *connection = static_cast<DBusConnection *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
+		DBusMessage *message = static_cast<DBusMessage *>(External::Unwrap(args[0]->ToObject()->GetInternalField(1)));
 
 		char *signature = strdup(*String::Utf8Value(args[2]->ToString()));
 		_SendMessageReply(connection, message, args[1], signature);
-		delete signature;
+		free(signature);
 
 		return Undefined();
 	}

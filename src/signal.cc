@@ -4,6 +4,7 @@
 #include <dbus/dbus.h>
 
 #include "dbus.h"
+#include "callback.h"
 #include "signal.h"
 #include "encoder.h"
 
@@ -89,7 +90,7 @@ namespace Signal {
 			));
 		}
 
-		NodeDBus::BusObject *bus = (NodeDBus::BusObject *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
+		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
 		DBusMessage *message;
 		DBusMessageIter iter;
 
@@ -107,14 +108,16 @@ namespace Signal {
 		Local<Array> signatures = Local<Array>::Cast(args[5]);
 		for (unsigned int i = 0; i < arguments->Length(); ++i) {
 			Local<Value> arg = arguments->Get(i);
+
 			char *sig = strdup(*String::Utf8Value(signatures->Get(i)->ToString()));
+
 			if (!Encoder::EncodeObject(arg, &iter, sig)) {
-				dbus_free(sig);
+				free(sig);
 				printf("Failed to encode arguments of signal\n");
 				break;
 			}
 
-			dbus_free(sig);
+			free(sig);
 		}
 
 		// Send out message
@@ -122,9 +125,9 @@ namespace Signal {
 		dbus_connection_flush(bus->connection);
 		dbus_message_unref(message);
 
-		delete path;
-		delete interface;
-		delete signal;
+		free(path);
+		free(interface);
+		free(signal);
 
 		return Undefined();
 	}

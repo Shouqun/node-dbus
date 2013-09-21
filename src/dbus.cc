@@ -2,10 +2,10 @@
 #include <node.h>
 #include <uv.h>
 #include <cstring>
+#include <stdlib.h>
 #include <dbus/dbus.h>
 
 #include "dbus.h"
-#include "callback.h"
 #include "connection.h"
 #include "signal.h"
 #include "decoder.h"
@@ -43,8 +43,7 @@ namespace NodeDBus {
 		dbus_pending_call_unref(pending);
 
 		// Preparing arguments for callback
-		Callback::CallbackData *callback_data = new Callback::CallbackData();
-		callback_data->callback = data->callback;
+		Callback::CallbackData *callback_data = data->callback;
 		callback_data->argc = 1;
 		callback_data->argv = Persistent<Object>::New(Object::New());
 		callback_data->argv->Set(0, result);
@@ -57,7 +56,7 @@ namespace NodeDBus {
 	{
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
 
-		data->callback.Clear();
+		data->callback = NULL;
 		data->pending = NULL;
 		delete data;
 	}
@@ -94,7 +93,7 @@ namespace NodeDBus {
 
 		// Create bus object
 		BusObject *bus = new BusObject;
-		bus->type = (BusType)args[0]->IntegerValue();
+		bus->type = static_cast<BusType>(args[0]->IntegerValue());
 		bus->connection = connection;
 
 		// Create a JavaScript object to store bus object
@@ -113,30 +112,29 @@ namespace NodeDBus {
 		HandleScope scope;
 		DBusError error;
 
-		Local<Object> bus_object = args[0]->ToObject();
-		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
-		char *object_path = strdup(*String::Utf8Value(args[2]->ToString()));
-		char *interface_name = strdup(*String::Utf8Value(args[3]->ToString()));
-		char *method = strdup(*String::Utf8Value(args[4]->ToString()));
-		Local<Function> callback = Local<Function>::Cast(args[8]);
 		int timeout = -1;
-
 		if (args[6]->IsInt32())
 			timeout = args[6]->Int32Value();
 
 		// Get bus from internal field
-		BusObject *bus = (BusObject *) External::Unwrap(bus_object->GetInternalField(0));
+		Local<Object> bus_object = args[0]->ToObject();
+		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 
 		// Initializing error handler
 		dbus_error_init(&error);
 
 		// Create message for method call
+		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
+		char *object_path = strdup(*String::Utf8Value(args[2]->ToString()));
+		char *interface_name = strdup(*String::Utf8Value(args[3]->ToString()));
+		char *method = strdup(*String::Utf8Value(args[4]->ToString()));
+
 		DBusMessage *message = dbus_message_new_method_call(service_name, object_path, interface_name, method);
 
-		delete service_name;
-		delete object_path;
-		delete interface_name;
-		delete method;
+		free(service_name);
+		free(object_path);
+		free(interface_name);
+		free(method);
 
 		// Preparing method arguments
 		if (args[7]->IsObject()) {
@@ -162,17 +160,17 @@ namespace NodeDBus {
 					Local<Value> arg = argument_arr->Get(i);
 
 					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
-						dbus_free(arg_sig);
+						free(arg_sig);
 						break;
 					}
 
-					dbus_free(arg_sig);
+					free(arg_sig);
 
 					if (!dbus_signature_iter_next(&siter))
 						break;
 				}
 
-				dbus_free(sig);
+				free(sig);
 			}
 		}
 
@@ -188,7 +186,11 @@ namespace NodeDBus {
 		// Set callback for waiting
 		DBusAsyncData *data = new DBusAsyncData;
 		data->pending = pending;
-		data->callback = Persistent<Function>::New(callback);
+		data->callback = new Callback::CallbackData();
+
+		Local<Function> callback = Local<Function>::Cast(args[8]);
+		data->callback->callback = Persistent<Function>::New(callback);
+
 		if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
 			if (message != NULL)
 				dbus_message_unref(message);
@@ -218,13 +220,13 @@ namespace NodeDBus {
 			));
 		}
 
-		BusObject *bus = (BusObject *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
+		BusObject *bus = static_cast<BusObject *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
 		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
 
 		// Request bus name
 		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
 
-		dbus_free(service_name);
+		free(service_name);
 
 		return Undefined();
 	}
@@ -241,7 +243,7 @@ namespace NodeDBus {
 
 		Handle<Value> obj = Introspect::CreateObject(src);
 
-		delete src;
+		free(src);
 
 		return scope.Close(obj);
 	}
@@ -264,13 +266,13 @@ namespace NodeDBus {
 		String::Utf8Value rule(args[1]->ToString());
 		char *rule_str = strdup(*rule);
 
-		BusObject *bus = (BusObject *) External::Unwrap(bus_object->GetInternalField(0));
+		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 
 		dbus_error_init(&error);
 		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
 
-		delete rule_str;
+		free(rule_str);
 
 		if (dbus_error_is_set(&error)) {
 			printf("Failed to add rule: %s\n", error.message);

@@ -29,7 +29,7 @@ namespace Introspect {
 
 	static void StartElementHandler(void *user_data, const XML_Char *name, const XML_Char **attrs)
 	{
-		IntrospectObject *introspect_obj = reinterpret_cast<IntrospectObject *>(user_data);
+		IntrospectObject *introspect_obj = static_cast<IntrospectObject *>(user_data);
 
 		if (strcmp(name, "node") == 0) {
 

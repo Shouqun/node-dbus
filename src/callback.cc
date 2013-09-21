@@ -25,7 +25,7 @@ namespace Callback {
 		// Preparing arguments
 		Handle<Value> args[data->argc];
 		for (unsigned int i = 0; i < data->argc; ++i) {
-			args[i] = data->argv->Get(i);
+			args[i] = Local<Value>::New(data->argv->Get(i));
 		}
 
 		// Invoke
@@ -37,12 +37,11 @@ namespace Callback {
 
 		// Release
 		data->argv.Dispose();
-		data->argv.Clear();
 		data->callback.Dispose();
-		data->callback.Clear();
 		delete data;
 
 		req->data = NULL;
+		delete req;
 	}
 
 	void Invoke(CallbackData *callback_data)
