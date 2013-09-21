@@ -20,15 +20,22 @@ namespace NodeDBus {
 		Persistent<Function> cb;
 
 		~NodeCallback() {
-//			Holder.Dispose();
-//			cb.Dispose();
+			Holder.Dispose();
+			cb.Dispose();
 		}
 	};
 
-	typedef struct DBusAsyncData{
-		struct NodeCallback *callback;
+	typedef struct DBusAsyncData {
+		char *method;
+		Persistent<Function> callback;
 		DBusPendingCall *pending;
 	} DBusAsyncData;
+
+	struct CallbackData {
+		Persistent<Function> callback;
+		unsigned int argc;
+		Persistent<Object> argv;
+	};
 
 	typedef enum {
 		NODE_DBUS_BUS_SYSTEM,

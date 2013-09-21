@@ -10,11 +10,23 @@ var obj = service.createObject('/nodejs/dbus/ExampleService');
 
 var iface1 = obj.createInterface('nodejs.dbus.ExampleService.Interface1');
 
+iface1.addMethod('Dummy', {}, function(callback) {
+	setTimeout(function() {
+		callback();
+	}, 1000);
+});
+
 iface1.addMethod('Hello', { out: DBus.Define(String) }, function(callback) {
 	callback('Hello There!');
 });
 
 iface1.addMethod('SendObject', { in: [ DBus.Define(Object) ], out: DBus.Define(Object) }, function(obj, callback) {
+	console.log(obj);
+	callback(obj);
+});
+
+iface1.addMethod('SendVarient', { in: [ DBus.Define('Auto') ], out: DBus.Define('Auto') }, function(obj, callback) {
+	console.log(obj);
 	callback(obj);
 });
 
@@ -52,10 +64,16 @@ iface1.addMethod('GetContacts', { out: DBus.Define(Object, 'contacts') }, functi
 	callback({
 		Fred: {
 			email: 'fred@mandice.com',
-			url: 'http://fred-zone.blogspot.com/'
+			url: 'http://fred-zone.blogspot.com/',
+			age: 28,
+			tel: [
+				'09263335xx',
+				'0936123456'
+			]
 		},
 		Stacy: {
 			email: 'stacy@mandice.com',
+			age: 28,
 			url: 'http://www.mandice.com/'
 		},
 		Charles: {
@@ -71,7 +89,15 @@ iface1.addMethod('GetContacts', { out: DBus.Define(Object, 'contacts') }, functi
 			url: 'http://www.mandice.org/'
 		},
 		Frankie: {
-			email: 'frankie@mandice.com'
+			email: 'frankie@mandice.com',
+			address: [
+				{
+					country: 'Taipei'
+				},
+				{
+					country: 'New Taipei'
+				}
+			]
 		}
 	});
 });

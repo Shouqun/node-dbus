@@ -14,23 +14,42 @@
 
 namespace NodeDBus {
 
-	static void WeakMethodCallback(Persistent<Value> object, void *parameter)
+	static void InvokeCallback(uv_work_t* req)
 	{
-		DBusAsyncData *data = (DBusAsyncData *)parameter;
+	}
 
-		// TODO: Try to make sure memory does not leak
-		data->callback->Holder.Dispose();
-		data->callback->Holder.Clear();
-		data->callback->cb.Dispose();
-		data->callback->cb.Clear();
-		delete data->callback;
+	static void ReleaseCallback(uv_work_t* req)
+	{
+		HandleScope scope;
+		CallbackData *data = static_cast<CallbackData *>(req->data);
+
+		// Call
+		TryCatch try_catch;
+
+		// Preparing arguments
+		Handle<Value> args[data->argc];
+		for (unsigned int i = 0; i < data->argc; ++i) {
+			args[i] = data->argv->Get(i);
+		}
+
+		data->callback->Call(data->callback, data->argc, args);
+
+		if (try_catch.HasCaught()) {
+			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
+		}
+
+		data->argv.Clear();
+		data->callback.Clear();
+		delete data;
+
+		req->data = NULL;
 	}
 
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
 		DBusError error;
 		DBusMessage *reply_message;
-		DBusAsyncData *data = (DBusAsyncData*)user_data;
+		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
 
 		dbus_error_init(&error);
 
@@ -48,32 +67,30 @@ namespace NodeDBus {
 
 		// Decode message for arguments
 		Handle<Value> result = Decoder::DecodeMessage(reply_message);
-		Handle<Value> args[] = {
-			result
-		};
-
-		// Call
-		Handle<Object> holder = data->callback->Holder;
-		Handle<Function> callback = data->callback->cb;
-		data->callback->cb.MakeWeak(data, WeakMethodCallback);
-
-		TryCatch try_catch;
-
-		callback->Call(holder, 1, args);
-
-		if (try_catch.HasCaught()) {
-			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
-		}
 
 		// Release
 		dbus_message_unref(reply_message);
 		dbus_pending_call_unref(pending);
+
+		// Preparing callback
+		CallbackData *callback_data = new CallbackData();
+		callback_data->callback = data->callback;
+		callback_data->argc = 1;
+		callback_data->argv = Persistent<Object>::New(Object::New());
+		callback_data->argv->Set(0, result);
+
+		// Invoke callback
+		uv_work_t *req = new uv_work_t();
+		req->data = callback_data;
+		uv_queue_work(uv_default_loop(), req, InvokeCallback, (uv_after_work_cb)ReleaseCallback);
 	}
 
 	static void method_free(void *user_data)
 	{
-		DBusAsyncData *data = (DBusAsyncData *)user_data;
+		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
 
+		data->callback.Clear();
+		delete data->method;
 		delete data;
 	}
 
@@ -129,10 +146,10 @@ namespace NodeDBus {
 		DBusError error;
 
 		Local<Object> bus_object = args[0]->ToObject();
-		String::Utf8Value service_name(args[1]->ToString());
-		String::Utf8Value object_path(args[2]->ToString());
-		String::Utf8Value interface_name(args[3]->ToString());
-		String::Utf8Value method(args[4]->ToString());
+		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
+		char *object_path = strdup(*String::Utf8Value(args[2]->ToString()));
+		char *interface_name = strdup(*String::Utf8Value(args[3]->ToString()));
+		char *method = strdup(*String::Utf8Value(args[4]->ToString()));
 		String::Utf8Value signature(args[5]->ToString());
 		Local<Function> callback = Local<Function>::Cast(args[8]);
 		int timeout = -1;
@@ -147,7 +164,11 @@ namespace NodeDBus {
 		dbus_error_init(&error);
 
 		// Create message for method call
-		DBusMessage *message = dbus_message_new_method_call(*service_name, *object_path, *interface_name, *method);
+		DBusMessage *message = dbus_message_new_method_call(service_name, object_path, interface_name, method);
+
+		delete service_name;
+		delete object_path;
+		delete interface_name;
 
 		// Preparing method arguments
 		if (args[7]->IsObject()) {
@@ -160,12 +181,13 @@ namespace NodeDBus {
 			dbus_message_iter_init_append(message, &iter); 
 
 			// Initializing signature
-			if (!dbus_signature_validate(*signature, &error)) {
+			char *sig = strdup(*signature);
+			if (!dbus_signature_validate(sig, &error)) {
 				return ThrowException(Exception::Error(String::New(error.message)));
 			}
 
 			// Getting all signatures
-			dbus_signature_iter_init(&siter, *signature);
+			dbus_signature_iter_init(&siter, sig);
 			for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 				char *arg_sig = dbus_signature_iter_get_signature(&siter);
 				Local<Value> arg = argument_arr->Get(i);
@@ -176,8 +198,12 @@ namespace NodeDBus {
 				}
 
 				dbus_free(arg_sig);
-				dbus_signature_iter_next(&siter);
+
+				if (!dbus_signature_iter_next(&siter))
+					break;
 			}
+
+			dbus_free(sig);
 		}
 
 		// Send message and call method
@@ -189,12 +215,16 @@ namespace NodeDBus {
 			return ThrowException(Exception::Error(String::New("Failed to call method: Out of Memory")));
 		}
 
+		if (pending == NULL) {
+			dbus_message_unref(message);
+			return Undefined();
+		}
+
 		// Set callback for waiting
 		DBusAsyncData *data = new DBusAsyncData;
+		data->method = method;
 		data->pending = pending;
-		data->callback = new NodeCallback();
-		data->callback->Holder = Persistent<Object>::New(args.Holder());
-		data->callback->cb = Persistent<Function>::New(callback);
+		data->callback = Persistent<Function>::New(callback);
 		if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
 			if (message != NULL)
 				dbus_message_unref(message);
@@ -230,6 +260,8 @@ namespace NodeDBus {
 		// Request bus name
 		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
 
+		dbus_free(service_name);
+
 		return Undefined();
 	}
 
@@ -237,9 +269,17 @@ namespace NodeDBus {
 	{
 		HandleScope scope;
 
-		String::Utf8Value source(args[0]->ToString());
+		if (!args[0]->IsString())
+			return Null();
 
-		return scope.Close(Introspect::CreateObject(*source));
+		String::Utf8Value source(args[0]->ToString());
+		char *src = strdup(*source);
+
+		Handle<Value> obj = Introspect::CreateObject(src);
+
+		delete src;
+
+		return scope.Close(obj);
 	}
 
 	Handle<Value> SetSignalHandler(const Arguments& args)
@@ -265,6 +305,8 @@ namespace NodeDBus {
 		dbus_error_init(&error);
 		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
+
+		delete rule_str;
 
 		if (dbus_error_is_set(&error)) {
 			printf("Failed to add rule: %s\n", error.message);

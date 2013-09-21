@@ -57,7 +57,7 @@ namespace ObjectHandler {
 
 		TryCatch try_catch;
 
-		object_handler->cb->Call(object_handler->Holder, 7, args);
+		object_handler->cb->Call(object_handler->cb, 7, args);
 
 		if (try_catch.HasCaught()) {
 			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));

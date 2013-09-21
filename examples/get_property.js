@@ -20,6 +20,7 @@ bus.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'n
 
 	// Get all properties
 	iface.getProperties(function(props) {
+		console.log('Properties:');
 		console.log(props);
 	});
 

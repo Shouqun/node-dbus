@@ -84,12 +84,12 @@ namespace Encoder {
 			char *data = strdup(*data_val);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
-				delete data;
+				dbus_free(data);
 				printf("Failed to encode string value\n");
 				return false;
 			}
 
-			delete data;
+			dbus_free(data);
 
 			break;
 		}

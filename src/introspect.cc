@@ -34,13 +34,13 @@ namespace Introspect {
 		if (strcmp(name, "node") == 0) {
 
 			if (introspect_obj->current_class == INTROSPECT_NONE) {
-				introspect_obj->obj = Object::New();
+				introspect_obj->obj = Persistent<Object>::New(Object::New());
 				introspect_obj->current_class = INTROSPECT_ROOT;
 			}
 		
 		} else if (strcmp(name, "interface") == 0) {
 
-			Local<Object> obj = introspect_obj->obj;
+			Handle<Object> obj = introspect_obj->obj;
 
 			// Create a new object for interface
 			Local<Object> interface = Object::New();
@@ -146,6 +146,8 @@ namespace Introspect {
 
 		// Start to parse source
 		if (!XML_Parse(parser, source, strlen(source), true)) {
+			delete introspect_obj;
+
 			return Null();
 		}
 
@@ -153,6 +155,8 @@ namespace Introspect {
 
 		Handle<Object> obj = introspect_obj->obj;
 
+		// Clear
+		introspect_obj->obj.Clear();
 		delete introspect_obj;
 
 		return scope.Close(obj);

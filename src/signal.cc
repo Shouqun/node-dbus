@@ -17,12 +17,14 @@ namespace Signal {
 
 	void DispatchSignal(Handle<Value> args[])
 	{
+		HandleScope scope;
+
 		if (!signal_handler)
 			return;
 
 		TryCatch try_catch;
 
-		signal_handler->cb->Call(signal_handler->Holder, 6, args);
+		signal_handler->cb->Call(signal_handler->cb, 6, args);
 
 		if (try_catch.HasCaught()) {
 			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
@@ -105,11 +107,14 @@ namespace Signal {
 		Local<Array> signatures = Local<Array>::Cast(args[5]);
 		for (unsigned int i = 0; i < arguments->Length(); ++i) {
 			Local<Value> arg = arguments->Get(i);
-			String::Utf8Value sig(signatures->Get(i)->ToString());
-			if (!Encoder::EncodeObject(arg, &iter, *sig)) {
+			char *sig = strdup(*String::Utf8Value(signatures->Get(i)->ToString()));
+			if (!Encoder::EncodeObject(arg, &iter, sig)) {
+				dbus_free(sig);
 				printf("Failed to encode arguments of signal\n");
 				break;
 			}
+
+			dbus_free(sig);
 		}
 
 		// Send out message
