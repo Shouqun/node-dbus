@@ -13,6 +13,7 @@ namespace Decoder {
 
 	Handle<Value> DecodeMessageIter(DBusMessageIter *iter, char *signature)
 	{
+		HandleScope scope;
 		DBusSignatureIter siter;
 
 		// Get type of current value
@@ -21,7 +22,7 @@ namespace Decoder {
 		{
 			dbus_bool_t value = false;
 			dbus_message_iter_get_basic(iter, &value);
-			return Boolean::New(value);
+			return scope.Close(Boolean::New(value));
 		}
 
 		case DBUS_TYPE_BYTE:
@@ -34,14 +35,14 @@ namespace Decoder {
 		{
 			dbus_uint64_t value = 0;
 			dbus_message_iter_get_basic(iter, &value);
-			return Number::New(value);
+			return scope.Close(Number::New(value));
 		}
 
 		case DBUS_TYPE_DOUBLE: 
 		{
 			double value = 0;
 			dbus_message_iter_get_basic(iter, &value);
-			return Number::New(value);
+			return scope.Close(Number::New(value));
 		}
 
 		case DBUS_TYPE_OBJECT_PATH:
@@ -50,7 +51,7 @@ namespace Decoder {
 		{
 			const char *value;
 			dbus_message_iter_get_basic(iter, &value); 
-			return String::New(value);
+			return scope.Close(String::New(value));
 		}
 
 		case DBUS_TYPE_STRUCT:
@@ -96,7 +97,7 @@ namespace Decoder {
 
 				// Make sure it doesn't empty
 				if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_INVALID)
-					return result;
+					return scope.Close(result);
 
 				do {
 					// Getting sub iterator
@@ -122,14 +123,14 @@ namespace Decoder {
 
 				} while(dbus_message_iter_next(&internal_iter));
 
-				return result;
+				return scope.Close(result);
 			}
 
 			// Create an array
 			unsigned int count = 0;
 			Handle<Array> result = Array::New();
 			if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_INVALID)
-				return result;
+				return scope.Close(result);
 
 			do {
 
@@ -144,7 +145,7 @@ namespace Decoder {
 				count++;
 			} while(dbus_message_iter_next(&internal_iter));
 
-			return result;
+			return scope.Close(result);
 		}
 
 		case DBUS_TYPE_VARIANT:
@@ -152,7 +153,7 @@ namespace Decoder {
 			DBusMessageIter internal_iter;
 			dbus_message_iter_recurse(iter, &internal_iter);
 
-			return DecodeMessageIter(&internal_iter, dbus_message_iter_get_signature(&internal_iter));
+			return scope.Close(DecodeMessageIter(&internal_iter, dbus_message_iter_get_signature(&internal_iter)));
 		}
 
 		default:
@@ -167,16 +168,18 @@ namespace Decoder {
 	{
 		HandleScope scope;
 		DBusMessageIter iter;
-		char *signature;
 
-		if (!dbus_message_iter_init(message, &iter)) {
+		if (!dbus_message_iter_init(message, &iter))
 			return Undefined();
-		}
 
 		if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR)
 			return Undefined();
 
-		signature = (char *)dbus_message_get_signature(message);
+		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID)
+			return Undefined();
+
+		char *signature = NULL;
+		signature = dbus_message_iter_get_signature(&iter);
 		Handle<Value> obj = DecodeMessageIter(&iter, signature);
 		if (obj->IsUndefined())
 			return Undefined();

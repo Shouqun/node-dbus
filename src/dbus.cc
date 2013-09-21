@@ -37,26 +37,23 @@ namespace NodeDBus {
 
 		// Decode message for arguments
 		Handle<Value> result = Decoder::DecodeMessage(reply_message);
+		Handle<Value> args[] = {
+			result
+		};
 
 		// Release
 		dbus_message_unref(reply_message);
 		dbus_pending_call_unref(pending);
 
-		// Preparing arguments for callback
-		Callback::CallbackData *callback_data = data->callback;
-		callback_data->argc = 1;
-		callback_data->argv = Persistent<Object>::New(Object::New());
-		callback_data->argv->Set(0, result);
-
-		// Invoke callback on the next tick
-		Callback::Invoke(callback_data);
+		MakeCallback(Context::GetCurrent()->Global(), data->callback, 1, args);
 	}
 
 	static void method_free(void *user_data)
 	{
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
 
-		data->callback = NULL;
+		data->callback.Dispose();
+		data->callback.Clear();
 		data->pending = NULL;
 		delete data;
 	}
@@ -164,13 +161,13 @@ namespace NodeDBus {
 						break;
 					}
 
-					free(arg_sig);
+					dbus_free(arg_sig);
 
 					if (!dbus_signature_iter_next(&siter))
 						break;
 				}
 
-				free(sig);
+				dbus_free(sig);
 			}
 		}
 
@@ -186,10 +183,11 @@ namespace NodeDBus {
 		// Set callback for waiting
 		DBusAsyncData *data = new DBusAsyncData;
 		data->pending = pending;
-		data->callback = new Callback::CallbackData();
+//		data->callback = new Callback::CallbackData();
 
 		Local<Function> callback = Local<Function>::Cast(args[8]);
-		data->callback->callback = Persistent<Function>::New(callback);
+		//data->callback->callback = Persistent<Function>::New(callback);
+		data->callback = Persistent<Function>::New(callback);
 
 		if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
 			if (message != NULL)

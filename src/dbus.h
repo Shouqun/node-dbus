@@ -4,8 +4,6 @@
 #include <v8.h>
 #include <string>
 
-#include "callback.h"
-
 namespace NodeDBus {
 
 	using namespace node;
@@ -28,7 +26,7 @@ namespace NodeDBus {
 	};
 
 	typedef struct DBusAsyncData {
-		Callback::CallbackData *callback;
+		Persistent<Function> callback;
 		DBusPendingCall *pending;
 	} DBusAsyncData;
 

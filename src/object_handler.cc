@@ -140,7 +140,7 @@ namespace ObjectHandler {
 			object_path,
 			&vtable,
 			NULL);
-		free(object_path);
+		dbus_free(object_path);
 		if (!ret) {
 			return ThrowException(Exception::Error(
 				String::New("Out of Memory")
@@ -165,7 +165,7 @@ namespace ObjectHandler {
 
 		char *signature = strdup(*String::Utf8Value(args[2]->ToString()));
 		_SendMessageReply(connection, message, args[1], signature);
-		free(signature);
+		dbus_free(signature);
 
 		return Undefined();
 	}

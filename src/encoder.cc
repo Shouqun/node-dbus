@@ -38,7 +38,6 @@ namespace Encoder {
 
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, char *signature)
 	{
-		HandleScope scope;
 		DBusSignatureIter siter;
 		int type;
 
@@ -124,15 +123,15 @@ namespace Encoder {
 
 			// Open array container to process elements in there
 			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_ARRAY, array_sig, &subIter)) {
+				dbus_free(array_sig);
 				printf("Can't open container for Array type\n");
-				free(array_sig);
 				return false; 
 			}
 
 			// It's a dictionary
 			if (dbus_signature_iter_get_element_type(&siter) == DBUS_TYPE_DICT_ENTRY) {
 
-				free(array_sig);
+				dbus_free(array_sig);
 
 				Local<Object> value_object = value->ToObject();
 				DBusSignatureIter dictSubSiter;
@@ -164,7 +163,7 @@ namespace Encoder {
 					// Append the key
 					char *prop_key_str = strdup(*String::Utf8Value(prop_key->ToString()));
 					dbus_message_iter_append_basic(&dict_iter, DBUS_TYPE_STRING, &prop_key_str);
-					free(prop_key_str);
+					dbus_free(prop_key_str);
 
 					// Append the value
 					if (!EncodeObject(prop_value, &dict_iter, sig)) {
@@ -177,7 +176,7 @@ namespace Encoder {
 					dbus_message_iter_close_container(&subIter, &dict_iter); 
 				}
 
-				free(sig);
+				dbus_free(sig);
 				dbus_message_iter_close_container(iter, &subIter);
 
 				if (failed) 
@@ -200,7 +199,7 @@ namespace Encoder {
 			}
 
 			dbus_message_iter_close_container(iter, &subIter);
-			free(array_sig);
+			dbus_free(array_sig);
 
 			break;
 		}
@@ -252,12 +251,12 @@ namespace Encoder {
 				Local<Value> prop_key = prop_names->Get(i);
 
 				if (!EncodeObject(value_object->Get(prop_key), &subIter, sig)) {
-					free(sig);
+					dbus_free(sig);
 					printf("Failed to encode element of dictionary\n");
 					return false;
 				}
 
-				free(sig);
+				dbus_free(sig);
 
 				if (!dbus_signature_iter_next(&structSiter))
 					break;
