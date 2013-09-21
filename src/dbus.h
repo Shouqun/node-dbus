@@ -26,7 +26,6 @@ namespace NodeDBus {
 	};
 
 	typedef struct DBusAsyncData {
-		char *method;
 		Persistent<Function> callback;
 		DBusPendingCall *pending;
 	} DBusAsyncData;

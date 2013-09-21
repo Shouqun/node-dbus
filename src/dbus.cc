@@ -59,7 +59,6 @@ namespace NodeDBus {
 
 		data->callback.Clear();
 		data->pending = NULL;
-		delete data->method;
 		delete data;
 	}
 
@@ -119,7 +118,6 @@ namespace NodeDBus {
 		char *object_path = strdup(*String::Utf8Value(args[2]->ToString()));
 		char *interface_name = strdup(*String::Utf8Value(args[3]->ToString()));
 		char *method = strdup(*String::Utf8Value(args[4]->ToString()));
-		String::Utf8Value signature(args[5]->ToString());
 		Local<Function> callback = Local<Function>::Cast(args[8]);
 		int timeout = -1;
 
@@ -138,6 +136,7 @@ namespace NodeDBus {
 		delete service_name;
 		delete object_path;
 		delete interface_name;
+		delete method;
 
 		// Preparing method arguments
 		if (args[7]->IsObject()) {
@@ -145,34 +144,36 @@ namespace NodeDBus {
 			DBusSignatureIter siter;
 
 			Local<Array> argument_arr = Local<Array>::Cast(args[7]);
+			if (argument_arr->Length() > 0) {
 
-			// Initializing augument message
-			dbus_message_iter_init_append(message, &iter); 
+				// Initializing augument message
+				dbus_message_iter_init_append(message, &iter); 
 
-			// Initializing signature
-			char *sig = strdup(*signature);
-			if (!dbus_signature_validate(sig, &error)) {
-				return ThrowException(Exception::Error(String::New(error.message)));
-			}
-
-			// Getting all signatures
-			dbus_signature_iter_init(&siter, sig);
-			for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
-				char *arg_sig = dbus_signature_iter_get_signature(&siter);
-				Local<Value> arg = argument_arr->Get(i);
-
-				if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
-					dbus_free(arg_sig);
-					break;
+				// Initializing signature
+				char *sig = strdup(*String::Utf8Value(args[5]->ToString()));
+				if (!dbus_signature_validate(sig, &error)) {
+					return ThrowException(Exception::Error(String::New(error.message)));
 				}
 
-				dbus_free(arg_sig);
+				// Getting all signatures
+				dbus_signature_iter_init(&siter, sig);
+				for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
+					char *arg_sig = dbus_signature_iter_get_signature(&siter);
+					Local<Value> arg = argument_arr->Get(i);
 
-				if (!dbus_signature_iter_next(&siter))
-					break;
+					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
+						dbus_free(arg_sig);
+						break;
+					}
+
+					dbus_free(arg_sig);
+
+					if (!dbus_signature_iter_next(&siter))
+						break;
+				}
+
+				dbus_free(sig);
 			}
-
-			dbus_free(sig);
 		}
 
 		// Send message and call method
@@ -184,14 +185,8 @@ namespace NodeDBus {
 			return ThrowException(Exception::Error(String::New("Failed to call method: Out of Memory")));
 		}
 
-		if (pending == NULL) {
-			dbus_message_unref(message);
-			return Undefined();
-		}
-
 		// Set callback for waiting
 		DBusAsyncData *data = new DBusAsyncData;
-		data->method = method;
 		data->pending = pending;
 		data->callback = Persistent<Function>::New(callback);
 		if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
