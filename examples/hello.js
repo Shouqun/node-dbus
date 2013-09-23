@@ -2,9 +2,9 @@ var DBus = require('../');
 
 var dbus = new DBus();
 
-var bus = dbus.getBus('system');
+var bus = dbus.getBus('session');
 
-bus.getInterface('org.freedesktop.DBus', '/', 'org.freedesktop.DBus', function(err, iface) {
+bus.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'nodejs.dbus.ExampleService.Interface1', function(err, iface) {
 
 	iface.Hello['timeout'] = 1000;
 	iface.Hello['finish'] = function(result) {
