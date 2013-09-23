@@ -16,7 +16,7 @@ namespace Introspect {
 	} IntrospectClass;
 
 	typedef struct {
-		Local<Object> obj;
+		Persistent<Object> obj;
 		Local<Object> current_interface;
 		Local<Object> current_method;
 		Local<Array> current_signal;

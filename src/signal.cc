@@ -17,12 +17,14 @@ namespace Signal {
 
 	void DispatchSignal(Handle<Value> args[])
 	{
+		HandleScope scope;
+
 		if (!signal_handler)
 			return;
 
 		TryCatch try_catch;
 
-		signal_handler->cb->Call(signal_handler->Holder, 6, args);
+		MakeCallback(signal_handler->cb, signal_handler->cb, 6, args);
 
 		if (try_catch.HasCaught()) {
 			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
@@ -87,7 +89,7 @@ namespace Signal {
 			));
 		}
 
-		NodeDBus::BusObject *bus = (NodeDBus::BusObject *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
+		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
 		DBusMessage *message;
 		DBusMessageIter iter;
 
@@ -105,11 +107,16 @@ namespace Signal {
 		Local<Array> signatures = Local<Array>::Cast(args[5]);
 		for (unsigned int i = 0; i < arguments->Length(); ++i) {
 			Local<Value> arg = arguments->Get(i);
-			String::Utf8Value sig(signatures->Get(i)->ToString());
-			if (!Encoder::EncodeObject(arg, &iter, *sig)) {
+
+			char *sig = strdup(*String::Utf8Value(signatures->Get(i)->ToString()));
+
+			if (!Encoder::EncodeObject(arg, &iter, sig)) {
+				free(sig);
 				printf("Failed to encode arguments of signal\n");
 				break;
 			}
+
+			free(sig);
 		}
 
 		// Send out message
@@ -117,9 +124,9 @@ namespace Signal {
 		dbus_connection_flush(bus->connection);
 		dbus_message_unref(message);
 
-		delete path;
-		delete interface;
-		delete signal;
+		free(path);
+		free(interface);
+		free(signal);
 
 		return Undefined();
 	}

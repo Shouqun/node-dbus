@@ -35,7 +35,7 @@ namespace ObjectHandler {
 		Persistent<ObjectTemplate> object_instance = Persistent<ObjectTemplate>::New(object_template);
 
 		// Store connection and message
-		Local<Object> message_object = object_instance->NewInstance();
+		Handle<Object> message_object = object_instance->NewInstance();
 		message_object->SetInternalField(0, External::New(connection));
 		message_object->SetInternalField(1, External::New(message));
 
@@ -52,15 +52,18 @@ namespace ObjectHandler {
 			arguments
 		};
 
+		// Keep message live for reply
+		dbus_message_ref(message);
+
 		TryCatch try_catch;
 
-		object_handler->cb->Call(object_handler->Holder, 7, args);
+		MakeCallback(object_handler->cb, object_handler->cb, 7, args);
 
 		if (try_catch.HasCaught()) {
 			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
 		}
 
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		return DBUS_HANDLER_RESULT_HANDLED;
 	}
 
 	static void UnregisterMessageHandler(DBusConnection *connection, void *user_data)
@@ -87,7 +90,6 @@ namespace ObjectHandler {
 		reply = dbus_message_new_method_return(message);
 
 		dbus_message_iter_init_append(reply, &iter);
-
 		if (!Encoder::EncodeObject(reply_value, &iter, signature)) {
 			printf("Failed to encode reply value\n");
 		}
@@ -130,7 +132,7 @@ namespace ObjectHandler {
 			));
 		}
 
-		NodeDBus::BusObject *bus = (NodeDBus::BusObject *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
+		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
 
 		// Register object path
 		char *object_path = strdup(*String::Utf8Value(args[1]->ToString()));
@@ -138,7 +140,7 @@ namespace ObjectHandler {
 			object_path,
 			&vtable,
 			NULL);
-		delete object_path;
+		dbus_free(object_path);
 		if (!ret) {
 			return ThrowException(Exception::Error(
 				String::New("Out of Memory")
@@ -158,10 +160,12 @@ namespace ObjectHandler {
 			));
 		}
 
-		DBusConnection *connection = (DBusConnection *) External::Unwrap(args[0]->ToObject()->GetInternalField(0));
-		DBusMessage *message = (DBusMessage *) External::Unwrap(args[0]->ToObject()->GetInternalField(1));
+		DBusConnection *connection = static_cast<DBusConnection *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
+		DBusMessage *message = static_cast<DBusMessage *>(External::Unwrap(args[0]->ToObject()->GetInternalField(1)));
 
-		_SendMessageReply(connection, message, args[1], *String::Utf8Value(args[2]->ToString()));
+		char *signature = strdup(*String::Utf8Value(args[2]->ToString()));
+		_SendMessageReply(connection, message, args[1], signature);
+		dbus_free(signature);
 
 		return Undefined();
 	}
