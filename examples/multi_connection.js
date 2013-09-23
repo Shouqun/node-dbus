@@ -25,3 +25,4 @@ bus2.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', '
 	iface.Hello();
 
 });
+
