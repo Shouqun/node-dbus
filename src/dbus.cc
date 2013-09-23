@@ -41,11 +41,11 @@ namespace NodeDBus {
 			result
 		};
 
+		MakeCallback(Context::GetCurrent()->Global(), data->callback, 1, args);
+
 		// Release
 		dbus_message_unref(reply_message);
 		dbus_pending_call_unref(pending);
-
-		MakeCallback(Context::GetCurrent()->Global(), data->callback, 1, args);
 	}
 
 	static void method_free(void *user_data)
