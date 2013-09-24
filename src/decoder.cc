@@ -55,38 +55,66 @@ namespace Decoder {
 		}
 
 		case DBUS_TYPE_STRUCT:
+		{
+			char *sig = NULL;
+
+			// Create a object
+			Handle<Object> result = Object::New();
+
+			// Make sure it doesn't empty
+			if (dbus_message_iter_get_arg_type(iter) == DBUS_TYPE_INVALID)
+				return scope.Close(result);
+
+			do {
+				// Getting sub iterator
+				DBusMessageIter dict_entry_iter;
+				dbus_message_iter_recurse(iter, &dict_entry_iter);
+
+				// Getting key
+				sig = dbus_message_iter_get_signature(&dict_entry_iter);
+				Handle<Value> key = DecodeMessageIter(&dict_entry_iter, sig);
+				dbus_free(sig);
+				if (key->IsUndefined())
+					continue;
+
+				// Try to get next element
+				Handle<Value> value;
+				if (dbus_message_iter_next(&dict_entry_iter)) {
+					// Getting value
+					sig = dbus_message_iter_get_signature(&dict_entry_iter);
+					value = DecodeMessageIter(&dict_entry_iter, sig);
+					dbus_free(sig);
+				} else {
+					value = Undefined();
+				}
+
+				// Append a property
+				result->Set(key, value); 
+
+			} while(dbus_message_iter_next(iter));
+
+			return scope.Close(result);
+		}
+
 		case DBUS_TYPE_ARRAY:
 		{
 			bool is_dict = false;
+			char *sig = NULL;
 			DBusMessageIter internal_iter;
 
 			// Initializing signature
 			dbus_signature_iter_init(&siter, signature);
+			dbus_message_iter_recurse(iter, &internal_iter);
 
-			if (dbus_message_iter_get_arg_type(iter) == DBUS_TYPE_STRUCT ||
-				dbus_signature_iter_get_current_type(&siter) == DBUS_TYPE_STRUCT) {
-
-				DBusMessageIter struct_iter;
+			if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_DICT_ENTRY) {
 				is_dict = true;
+			} else if (dbus_message_iter_get_element_type(iter) == DBUS_TYPE_DICT_ENTRY) {
+				is_dict = true;
+			} else if (dbus_message_iter_get_arg_type(iter) == DBUS_TYPE_ARRAY &&
+				dbus_signature_iter_get_current_type(&siter) == DBUS_TYPE_ARRAY) {
 
-				// Open stuct container
-				dbus_message_iter_recurse(iter, &struct_iter);
-				dbus_message_iter_recurse(&struct_iter, &internal_iter);
-
-			} else {
-
-				dbus_message_iter_recurse(iter, &internal_iter);
-
-				if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_DICT_ENTRY) {
+				if (dbus_signature_iter_get_element_type(&siter) == DBUS_TYPE_DICT_ENTRY)
 					is_dict = true;
-				} else if (dbus_message_iter_get_element_type(iter) == DBUS_TYPE_DICT_ENTRY) {
-					is_dict = true;
-				} else if (dbus_message_iter_get_arg_type(iter) == DBUS_TYPE_ARRAY &&
-					dbus_signature_iter_get_current_type(&siter) == DBUS_TYPE_ARRAY) {
-
-					if (dbus_signature_iter_get_element_type(&siter) == DBUS_TYPE_DICT_ENTRY)
-						is_dict = true;
-				}
 			}
 
 			// It's dictionary
@@ -105,7 +133,9 @@ namespace Decoder {
 					dbus_message_iter_recurse(&internal_iter, &dict_entry_iter);
 
 					// Getting key
-					Handle<Value> key = DecodeMessageIter(&dict_entry_iter, dbus_message_iter_get_signature(&dict_entry_iter));
+					sig = dbus_message_iter_get_signature(&dict_entry_iter);
+					Handle<Value> key = DecodeMessageIter(&dict_entry_iter, sig);
+					dbus_free(sig);
 					if (key->IsUndefined())
 						continue;
 
@@ -113,7 +143,9 @@ namespace Decoder {
 					Handle<Value> value;
 					if (dbus_message_iter_next(&dict_entry_iter)) {
 						// Getting value
-						value = DecodeMessageIter(&dict_entry_iter, dbus_message_iter_get_signature(&dict_entry_iter));
+						sig = dbus_message_iter_get_signature(&dict_entry_iter);
+						value = DecodeMessageIter(&dict_entry_iter, sig);
+						dbus_free(sig);
 					} else {
 						value = Undefined();
 					}
@@ -135,7 +167,9 @@ namespace Decoder {
 			do {
 
 				// Getting element
+				sig = dbus_message_iter_get_signature(&internal_iter);
 				Handle<Value> value = DecodeMessageIter(&internal_iter, dbus_message_iter_get_signature(&internal_iter));
+				dbus_free(sig);
 				if (value->IsUndefined())
 					continue;
 
@@ -150,10 +184,15 @@ namespace Decoder {
 
 		case DBUS_TYPE_VARIANT:
 		{
+			char *sig = NULL;
 			DBusMessageIter internal_iter;
 			dbus_message_iter_recurse(iter, &internal_iter);
 
-			return scope.Close(DecodeMessageIter(&internal_iter, dbus_message_iter_get_signature(&internal_iter)));
+			sig = dbus_message_iter_get_signature(&internal_iter);
+			Handle<Value> value = DecodeMessageIter(&internal_iter, sig);
+			dbus_free(sig);
+
+			return scope.Close(value);
 		}
 
 		default:
@@ -181,6 +220,7 @@ namespace Decoder {
 		char *signature = NULL;
 		signature = dbus_message_iter_get_signature(&iter);
 		Handle<Value> obj = DecodeMessageIter(&iter, signature);
+		dbus_free(signature);
 		if (obj->IsUndefined())
 			return Undefined();
 
@@ -209,6 +249,7 @@ namespace Decoder {
 		do {
 			signature = dbus_message_iter_get_signature(&iter);
 			Handle<Value> value = DecodeMessageIter(&iter, signature);
+			dbus_free(signature);
 			if (value->IsUndefined())
 				break;
 

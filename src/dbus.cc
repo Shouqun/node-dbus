@@ -45,7 +45,9 @@ namespace NodeDBus {
 		dbus_message_unref(reply_message);
 		dbus_pending_call_unref(pending);
 
-		MakeCallback(Context::GetCurrent()->Global(), data->callback, 1, args);
+		// Invoke
+		if (data->callback->IsFunction())
+			MakeCallback(Context::GetCurrent()->Global(), data->callback, 1, args);
 	}
 
 	static void method_free(void *user_data)
@@ -108,6 +110,9 @@ namespace NodeDBus {
 	{
 		HandleScope scope;
 		DBusError error;
+
+		if (!args[8]->IsFunction())
+			return ThrowException(Exception::Error(String::New("Require callback function")));
 
 		int timeout = -1;
 		if (args[6]->IsInt32())
@@ -183,7 +188,7 @@ namespace NodeDBus {
 		// Set callback for waiting
 		DBusAsyncData *data = new DBusAsyncData;
 		data->pending = pending;
-		Local<Function> callback = Local<Function>::Cast(args[8]);
+		Handle<Function> callback = Handle<Function>::Cast(args[8]);
 		data->callback = Persistent<Function>::New(callback);
 		if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
 			if (message != NULL)
@@ -232,8 +237,7 @@ namespace NodeDBus {
 		if (!args[0]->IsString())
 			return Null();
 
-		String::Utf8Value source(args[0]->ToString());
-		char *src = strdup(*source);
+		char *src = strdup(*String::Utf8Value(args[0]->ToString()));
 
 		Handle<Value> obj = Introspect::CreateObject(src);
 
