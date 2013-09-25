@@ -12,7 +12,7 @@ namespace Encoder {
 	using namespace v8;
 	using namespace std;
 
-	char *GetSignatureFromV8Type(Local<Value>& value)
+	const char *GetSignatureFromV8Type(Local<Value>& value)
 	{
 		if (value->IsTrue() || value->IsFalse() || value->IsBoolean() ) {
 			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
@@ -36,7 +36,7 @@ namespace Encoder {
 		}
 	}
 
-	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, char *signature)
+	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, const char *signature)
 	{
 		DBusSignatureIter siter;
 		int type;
@@ -84,12 +84,12 @@ namespace Encoder {
 			char *data = strdup(*data_val);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
-				free(data);
+				dbus_free(data);
 				printf("Failed to encode string value\n");
 				return false;
 			}
 
-			free(data);
+			dbus_free(data);
 
 			break;
 		}
@@ -208,7 +208,7 @@ namespace Encoder {
 		{
 			DBusMessageIter subIter;
 
-			char *var_sig = GetSignatureFromV8Type(value);
+			const char *var_sig = GetSignatureFromV8Type(value);
 
 			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, var_sig, &subIter)) {
 				printf("Can't open contianer for VARIANT type\n");

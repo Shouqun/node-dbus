@@ -133,10 +133,10 @@ namespace NodeDBus {
 
 		DBusMessage *message = dbus_message_new_method_call(service_name, object_path, interface_name, method);
 
-		free(service_name);
-		free(object_path);
-		free(interface_name);
-		free(method);
+		dbus_free(service_name);
+		dbus_free(object_path);
+		dbus_free(interface_name);
+		dbus_free(method);
 
 		// Preparing method arguments
 		if (args[7]->IsObject()) {
@@ -162,7 +162,7 @@ namespace NodeDBus {
 					Local<Value> arg = argument_arr->Get(i);
 
 					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
-						free(arg_sig);
+						dbus_free(arg_sig);
 						break;
 					}
 
@@ -225,7 +225,7 @@ namespace NodeDBus {
 		// Request bus name
 		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
 
-		free(service_name);
+		dbus_free(service_name);
 
 		return Undefined();
 	}
@@ -241,7 +241,7 @@ namespace NodeDBus {
 
 		Handle<Value> obj = Introspect::CreateObject(src);
 
-		free(src);
+		dbus_free(src);
 
 		return scope.Close(obj);
 	}
@@ -270,7 +270,7 @@ namespace NodeDBus {
 		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
 
-		free(rule_str);
+		dbus_free(rule_str);
 
 		if (dbus_error_is_set(&error)) {
 			printf("Failed to add rule: %s\n", error.message);

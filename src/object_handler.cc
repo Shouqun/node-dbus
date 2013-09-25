@@ -57,7 +57,8 @@ namespace ObjectHandler {
 
 		TryCatch try_catch;
 
-		MakeCallback(object_handler->cb, object_handler->cb, 7, args);
+		if (object_handler->cb->IsFunction())
+			MakeCallback(object_handler->cb, object_handler->cb, 7, args);
 
 		if (try_catch.HasCaught()) {
 			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));

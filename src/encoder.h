@@ -7,8 +7,8 @@ namespace Encoder {
 	using namespace v8;
 	using namespace std;
 
-	char *GetSignatureFromV8Type(Local<Value>& value);
-	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, char *signature);
+	const char *GetSignatureFromV8Type(Local<Value>& value);
+	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, const char *signature);
 }
 
 #endif
