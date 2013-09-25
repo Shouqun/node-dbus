@@ -241,18 +241,9 @@ namespace NodeDBus {
 
 		Handle<Value> obj = Introspect::CreateObject(src);
 
-		dbus_free(src);
+		free(src);
 
 		return scope.Close(obj);
-	}
-
-	Handle<Value> SetSignalHandler(const Arguments& args)
-	{
-		HandleScope scope;
-
-		Signal::SetHandler(args.Holder(), Handle<Function>::Cast(args[0]));
-
-		return Undefined();
 	}
 
 	Handle<Value> AddSignalFilter(const Arguments& args)
@@ -304,7 +295,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "sendMessageReply", ObjectHandler::SendMessageReply);
 		NODE_SET_METHOD(target, "setObjectHandler", SetObjectHandler);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
-		NODE_SET_METHOD(target, "setSignalHandler", SetSignalHandler);
+		NODE_SET_METHOD(target, "setSignalHandler", Signal::SetSignalHandler);
 		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);
 		NODE_SET_METHOD(target, "emitSignal", Signal::EmitSignal);
 	}
