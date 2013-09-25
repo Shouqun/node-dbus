@@ -270,21 +270,6 @@ namespace NodeDBus {
 		return Undefined();
 	}
 
-	Handle<Value> SetObjectHandler(const Arguments& args)
-	{
-		HandleScope scope;
-
-		if (!args[0]->IsFunction()) {
-			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a function")
-			));
-		}
-
-		ObjectHandler::SetHandler(args.Holder(), Handle<Function>::Cast(args[0]));
-
-		return Undefined();
-	}
-
 	static void init(Handle<Object> target) {
 		HandleScope scope;
 
@@ -293,7 +278,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "requestName", RequestName);
 		NODE_SET_METHOD(target, "registerObjectPath", ObjectHandler::RegisterObjectPath);
 		NODE_SET_METHOD(target, "sendMessageReply", ObjectHandler::SendMessageReply);
-		NODE_SET_METHOD(target, "setObjectHandler", SetObjectHandler);
+		NODE_SET_METHOD(target, "setObjectHandler", ObjectHandler::SetObjectHandler);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", Signal::SetSignalHandler);
 		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);
