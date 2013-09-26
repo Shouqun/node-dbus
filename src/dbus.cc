@@ -119,6 +119,9 @@ namespace NodeDBus {
 			timeout = args[6]->Int32Value();
 
 		// Get bus from internal field
+		if (!args[0]->IsObject())
+			return ThrowException(Exception::Error(String::New("First argument must be a object ")));
+
 		Local<Object> bus_object = args[0]->ToObject();
 		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 
@@ -126,6 +129,9 @@ namespace NodeDBus {
 		dbus_error_init(&error);
 
 		// Create message for method call
+		if (!args[1]->IsString() || !args[2]->IsString() || !args[3]->IsString() || !args[4]->IsString())
+			return ThrowException(Exception::Error(String::New("Require service name, object path, interface and method")));
+
 		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
 		char *object_path = strdup(*String::Utf8Value(args[2]->ToString()));
 		char *interface_name = strdup(*String::Utf8Value(args[3]->ToString()));
@@ -241,7 +247,7 @@ namespace NodeDBus {
 
 		Handle<Value> obj = Introspect::CreateObject(src);
 
-		free(src);
+		dbus_free(src);
 
 		return scope.Close(obj);
 	}

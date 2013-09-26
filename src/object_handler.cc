@@ -56,7 +56,7 @@ namespace ObjectHandler {
 		dbus_message_ref(message);
 
 		// Invoke
-		MakeCallback(handler, handler, 6, args);
+		MakeCallback(handler, handler, 7, args);
 
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}
