@@ -184,7 +184,7 @@ namespace NodeDBus {
 
 		// Send message and call method
 		DBusPendingCall *pending;
-		if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout)) {
+		if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout) || !pending) {
 			if (message != NULL)
 				dbus_message_unref(message);
 

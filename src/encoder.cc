@@ -38,6 +38,7 @@ namespace Encoder {
 
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, const char *signature)
 	{
+		HandleScope scope;
 		DBusSignatureIter siter;
 		int type;
 
