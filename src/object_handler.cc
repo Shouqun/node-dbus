@@ -122,6 +122,7 @@ namespace ObjectHandler {
 			object_path,
 			&vtable,
 			NULL);
+		dbus_connection_flush(bus->connection);
 		dbus_free(object_path);
 		if (!ret) {
 			return ThrowException(Exception::Error(

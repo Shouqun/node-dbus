@@ -251,7 +251,7 @@ namespace Decoder {
 			Handle<Value> value = DecodeMessageIter(&iter, signature);
 			dbus_free(signature);
 			if (value->IsUndefined())
-				break;
+				continue;
 
 			result->Set(count, value);
 

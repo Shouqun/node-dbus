@@ -15,11 +15,21 @@
 
 namespace NodeDBus {
 
+	static void release_pending(uv_async_t *handle, int status)
+	{
+		DBusPendingCall *pending = static_cast<DBusPendingCall *>(handle->data);
+
+		dbus_pending_call_unref(pending);
+	}
+
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
 		DBusError error;
 		DBusMessage *reply_message;
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
+
+		if (user_data == NULL)
+			printf("NULLLL\n");
 
 		dbus_error_init(&error);
 
@@ -41,13 +51,16 @@ namespace NodeDBus {
 			result
 		};
 
+		// Invoke
+		MakeCallback(data->callback, data->callback, 1, args);
+
 		// Release
 		dbus_message_unref(reply_message);
-		dbus_pending_call_unref(pending);
-
-		// Invoke
-		if (data->callback->IsFunction())
-			MakeCallback(Context::GetCurrent()->Global(), data->callback, 1, args);
+		uv_async_t *release_handle = new uv_async_t;
+		release_handle->data = (void *)pending;
+		uv_async_init(uv_default_loop(), release_handle, release_pending);
+		uv_async_send(release_handle);
+		uv_unref((uv_handle_t *)release_handle);
 	}
 
 	static void method_free(void *user_data)
@@ -144,12 +157,15 @@ namespace NodeDBus {
 		dbus_free(interface_name);
 		dbus_free(method);
 
+		if (message == NULL)
+			return ThrowException(Exception::Error(String::New("Failed to call method")));
+
 		// Preparing method arguments
 		if (args[7]->IsObject()) {
 			DBusMessageIter iter;
 			DBusSignatureIter siter;
 
-			Local<Array> argument_arr = Local<Array>::Cast(args[7]);
+			Handle<Array> argument_arr = Local<Array>::Cast(args[7]);
 			if (argument_arr->Length() > 0) {
 
 				// Initializing augument message
@@ -165,7 +181,7 @@ namespace NodeDBus {
 				dbus_signature_iter_init(&siter, sig);
 				for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 					char *arg_sig = dbus_signature_iter_get_signature(&siter);
-					Local<Value> arg = argument_arr->Get(i);
+					Handle<Value> arg = argument_arr->Get(i);
 
 					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
 						dbus_free(arg_sig);
@@ -206,6 +222,8 @@ namespace NodeDBus {
 		if (message != NULL)
 			dbus_message_unref(message);
 
+		dbus_connection_flush(bus->connection);
+
 		return Undefined();
 	}
 
@@ -230,6 +248,7 @@ namespace NodeDBus {
 
 		// Request bus name
 		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
+		dbus_connection_flush(bus->connection);
 
 		dbus_free(service_name);
 
