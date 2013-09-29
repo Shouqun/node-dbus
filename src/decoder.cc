@@ -11,7 +11,7 @@ namespace Decoder {
 	using namespace v8;
 	using namespace std;
 
-	Handle<Value> DecodeMessageIter(DBusMessageIter *iter, char *signature)
+	Handle<Value> DecodeMessageIter(DBusMessageIter *iter, const char *signature)
 	{
 		HandleScope scope;
 		DBusSignatureIter siter;
@@ -251,7 +251,7 @@ namespace Decoder {
 			Handle<Value> value = DecodeMessageIter(&iter, signature);
 			dbus_free(signature);
 			if (value->IsUndefined())
-				break;
+				continue;
 
 			result->Set(count, value);
 
