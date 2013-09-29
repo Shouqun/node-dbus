@@ -12,7 +12,7 @@ namespace Encoder {
 	using namespace v8;
 	using namespace std;
 
-	char *GetSignatureFromV8Type(Local<Value>& value)
+	const char *GetSignatureFromV8Type(Handle<Value>& value)
 	{
 		if (value->IsTrue() || value->IsFalse() || value->IsBoolean() ) {
 			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
@@ -36,8 +36,9 @@ namespace Encoder {
 		}
 	}
 
-	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, char *signature)
+	bool EncodeObject(Handle<Value> value, DBusMessageIter *iter, const char *signature)
 	{
+		HandleScope scope;
 		DBusSignatureIter siter;
 		int type;
 
@@ -84,12 +85,12 @@ namespace Encoder {
 			char *data = strdup(*data_val);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
-				free(data);
+				dbus_free(data);
 				printf("Failed to encode string value\n");
 				return false;
 			}
 
-			free(data);
+			dbus_free(data);
 
 			break;
 		}
@@ -133,7 +134,7 @@ namespace Encoder {
 
 				dbus_free(array_sig);
 
-				Local<Object> value_object = value->ToObject();
+				Handle<Object> value_object = value->ToObject();
 				DBusSignatureIter dictSubSiter;
 
 				// Getting sub-signature object
@@ -142,7 +143,7 @@ namespace Encoder {
 				char *sig = dbus_signature_iter_get_signature(&dictSubSiter);
 
 				// process each elements
-				Local<Array> prop_names = value_object->GetPropertyNames();
+				Handle<Array> prop_names = value_object->GetPropertyNames();
 				unsigned int len = prop_names->Length();
 
 				bool failed = false;
@@ -157,8 +158,8 @@ namespace Encoder {
 					}
 
 					// Getting the key and value
-					Local<Value> prop_key = prop_names->Get(i);
-					Local<Value> prop_value = value_object->Get(prop_key);
+					Handle<Value> prop_key = prop_names->Get(i);
+					Handle<Value> prop_value = value_object->Get(prop_key);
 
 					// Append the key
 					char *prop_key_str = strdup(*String::Utf8Value(prop_key->ToString()));
@@ -191,7 +192,7 @@ namespace Encoder {
 			}
 
 			// process each elements
-			Local<Array> arrayData = Local<Array>::Cast(value);
+			Handle<Array> arrayData = Handle<Array>::Cast(value);
 			for (unsigned int i = 0; i < arrayData->Length(); ++i) {
 				Local<Value> arrayItem = arrayData->Get(i);
 				if (!EncodeObject(arrayItem, &subIter, array_sig))
@@ -208,7 +209,7 @@ namespace Encoder {
 		{
 			DBusMessageIter subIter;
 
-			char *var_sig = GetSignatureFromV8Type(value);
+			const char *var_sig = GetSignatureFromV8Type(value);
 
 			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, var_sig, &subIter)) {
 				printf("Can't open contianer for VARIANT type\n");
@@ -235,20 +236,20 @@ namespace Encoder {
 				return false; 
 			}
 
-			Local<Object> value_object = value->ToObject();
+			Handle<Object> value_object = value->ToObject();
 
 			// Getting sub-signature object
 			dbus_signature_iter_recurse(&siter, &structSiter);
 
 			// process each elements
-			Local<Array> prop_names = value_object->GetPropertyNames();
+			Handle<Array> prop_names = value_object->GetPropertyNames();
 			unsigned int len = prop_names->Length();
 
 			for (unsigned int i = 0; i < len; ++i) {
 
 				char *sig = dbus_signature_iter_get_signature(&structSiter);
 
-				Local<Value> prop_key = prop_names->Get(i);
+				Handle<Value> prop_key = prop_names->Get(i);
 
 				if (!EncodeObject(value_object->Get(prop_key), &subIter, sig)) {
 					dbus_free(sig);

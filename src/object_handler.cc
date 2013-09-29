@@ -14,7 +14,7 @@ namespace ObjectHandler {
 	using namespace v8;
 	using namespace std;
 
-	struct NodeDBus::NodeCallback *object_handler = NULL;
+	Persistent<Function> handler;
 
 	// Initializing object handler table
 	static DBusHandlerResult MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data)
@@ -55,13 +55,8 @@ namespace ObjectHandler {
 		// Keep message live for reply
 		dbus_message_ref(message);
 
-		TryCatch try_catch;
-
-		MakeCallback(object_handler->cb, object_handler->cb, 7, args);
-
-		if (try_catch.HasCaught()) {
-			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
-		}
+		// Invoke
+		MakeCallback(handler, handler, 7, args);
 
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}
@@ -101,19 +96,6 @@ namespace ObjectHandler {
 		dbus_message_unref(reply);
 	}
 
-	void SetHandler(Handle<Object> Holder, Handle<Function> callback)
-	{
-		if (object_handler == NULL) {
-			object_handler = new NodeDBus::NodeCallback();
-		} else {
-			object_handler->Holder.Dispose();
-			object_handler->cb.Dispose();
-		}
-
-		object_handler->Holder = Persistent<Object>::New(Holder);
-		object_handler->cb = Persistent<Function>::New(callback);
-	}
-
 	DBusObjectPathVTable vtable = CreateVTable();
 
 	Handle<Value> RegisterObjectPath(Arguments const &args)
@@ -140,6 +122,7 @@ namespace ObjectHandler {
 			object_path,
 			&vtable,
 			NULL);
+		dbus_connection_flush(bus->connection);
 		dbus_free(object_path);
 		if (!ret) {
 			return ThrowException(Exception::Error(
@@ -166,6 +149,24 @@ namespace ObjectHandler {
 		char *signature = strdup(*String::Utf8Value(args[2]->ToString()));
 		_SendMessageReply(connection, message, args[1], signature);
 		dbus_free(signature);
+
+		return Undefined();
+	}
+
+	Handle<Value> SetObjectHandler(const Arguments& args)
+	{
+		HandleScope scope;
+
+		if (!args[0]->IsFunction()) {
+			return ThrowException(Exception::TypeError(
+				String::New("first argument must be a function")
+			));
+		}
+
+		handler.Dispose();
+		handler.Clear();
+
+		handler = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
 
 		return Undefined();
 	}

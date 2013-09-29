@@ -15,11 +15,21 @@
 
 namespace NodeDBus {
 
+	static void release_pending(uv_async_t *handle, int status)
+	{
+		DBusPendingCall *pending = static_cast<DBusPendingCall *>(handle->data);
+
+		dbus_pending_call_unref(pending);
+	}
+
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
 		DBusError error;
 		DBusMessage *reply_message;
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
+
+		if (user_data == NULL)
+			printf("NULLLL\n");
 
 		dbus_error_init(&error);
 
@@ -41,13 +51,16 @@ namespace NodeDBus {
 			result
 		};
 
+		// Invoke
+		MakeCallback(data->callback, data->callback, 1, args);
+
 		// Release
 		dbus_message_unref(reply_message);
-		dbus_pending_call_unref(pending);
-
-		// Invoke
-		if (data->callback->IsFunction())
-			MakeCallback(Context::GetCurrent()->Global(), data->callback, 1, args);
+		uv_async_t *release_handle = new uv_async_t;
+		release_handle->data = (void *)pending;
+		uv_async_init(uv_default_loop(), release_handle, release_pending);
+		uv_async_send(release_handle);
+		uv_unref((uv_handle_t *)release_handle);
 	}
 
 	static void method_free(void *user_data)
@@ -119,6 +132,9 @@ namespace NodeDBus {
 			timeout = args[6]->Int32Value();
 
 		// Get bus from internal field
+		if (!args[0]->IsObject())
+			return ThrowException(Exception::Error(String::New("First argument must be a object ")));
+
 		Local<Object> bus_object = args[0]->ToObject();
 		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 
@@ -126,6 +142,9 @@ namespace NodeDBus {
 		dbus_error_init(&error);
 
 		// Create message for method call
+		if (!args[1]->IsString() || !args[2]->IsString() || !args[3]->IsString() || !args[4]->IsString())
+			return ThrowException(Exception::Error(String::New("Require service name, object path, interface and method")));
+
 		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
 		char *object_path = strdup(*String::Utf8Value(args[2]->ToString()));
 		char *interface_name = strdup(*String::Utf8Value(args[3]->ToString()));
@@ -133,17 +152,20 @@ namespace NodeDBus {
 
 		DBusMessage *message = dbus_message_new_method_call(service_name, object_path, interface_name, method);
 
-		free(service_name);
-		free(object_path);
-		free(interface_name);
-		free(method);
+		dbus_free(service_name);
+		dbus_free(object_path);
+		dbus_free(interface_name);
+		dbus_free(method);
+
+		if (message == NULL)
+			return ThrowException(Exception::Error(String::New("Failed to call method")));
 
 		// Preparing method arguments
 		if (args[7]->IsObject()) {
 			DBusMessageIter iter;
 			DBusSignatureIter siter;
 
-			Local<Array> argument_arr = Local<Array>::Cast(args[7]);
+			Handle<Array> argument_arr = Local<Array>::Cast(args[7]);
 			if (argument_arr->Length() > 0) {
 
 				// Initializing augument message
@@ -159,10 +181,10 @@ namespace NodeDBus {
 				dbus_signature_iter_init(&siter, sig);
 				for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 					char *arg_sig = dbus_signature_iter_get_signature(&siter);
-					Local<Value> arg = argument_arr->Get(i);
+					Handle<Value> arg = argument_arr->Get(i);
 
 					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
-						free(arg_sig);
+						dbus_free(arg_sig);
 						break;
 					}
 
@@ -178,7 +200,7 @@ namespace NodeDBus {
 
 		// Send message and call method
 		DBusPendingCall *pending;
-		if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout)) {
+		if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout) || !pending) {
 			if (message != NULL)
 				dbus_message_unref(message);
 
@@ -199,6 +221,8 @@ namespace NodeDBus {
 
 		if (message != NULL)
 			dbus_message_unref(message);
+
+		dbus_connection_flush(bus->connection);
 
 		return Undefined();
 	}
@@ -224,8 +248,9 @@ namespace NodeDBus {
 
 		// Request bus name
 		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
+		dbus_connection_flush(bus->connection);
 
-		free(service_name);
+		dbus_free(service_name);
 
 		return Undefined();
 	}
@@ -241,18 +266,9 @@ namespace NodeDBus {
 
 		Handle<Value> obj = Introspect::CreateObject(src);
 
-		free(src);
+		dbus_free(src);
 
 		return scope.Close(obj);
-	}
-
-	Handle<Value> SetSignalHandler(const Arguments& args)
-	{
-		HandleScope scope;
-
-		Signal::SetHandler(args.Holder(), Handle<Function>::Cast(args[0]));
-
-		return Undefined();
 	}
 
 	Handle<Value> AddSignalFilter(const Arguments& args)
@@ -270,26 +286,11 @@ namespace NodeDBus {
 		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
 
-		free(rule_str);
+		dbus_free(rule_str);
 
 		if (dbus_error_is_set(&error)) {
 			printf("Failed to add rule: %s\n", error.message);
 		}
-
-		return Undefined();
-	}
-
-	Handle<Value> SetObjectHandler(const Arguments& args)
-	{
-		HandleScope scope;
-
-		if (!args[0]->IsFunction()) {
-			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a function")
-			));
-		}
-
-		ObjectHandler::SetHandler(args.Holder(), Handle<Function>::Cast(args[0]));
 
 		return Undefined();
 	}
@@ -302,9 +303,9 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "requestName", RequestName);
 		NODE_SET_METHOD(target, "registerObjectPath", ObjectHandler::RegisterObjectPath);
 		NODE_SET_METHOD(target, "sendMessageReply", ObjectHandler::SendMessageReply);
-		NODE_SET_METHOD(target, "setObjectHandler", SetObjectHandler);
+		NODE_SET_METHOD(target, "setObjectHandler", ObjectHandler::SetObjectHandler);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
-		NODE_SET_METHOD(target, "setSignalHandler", SetSignalHandler);
+		NODE_SET_METHOD(target, "setSignalHandler", Signal::SetSignalHandler);
 		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);
 		NODE_SET_METHOD(target, "emitSignal", Signal::EmitSignal);
 	}

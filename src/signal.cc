@@ -13,35 +13,25 @@ namespace Signal {
 	using namespace v8;
 	using namespace std;
 
-	struct NodeDBus::NodeCallback *signal_handler = NULL;
+	Persistent<Function> handler;
 
 	void DispatchSignal(Handle<Value> args[])
 	{
 		HandleScope scope;
 
-		if (!signal_handler)
-			return;
-
-		TryCatch try_catch;
-
-		MakeCallback(signal_handler->cb, signal_handler->cb, 6, args);
-
-		if (try_catch.HasCaught()) {
-			printf("Ooops, Exception on call the callback\n%s\n", *String::Utf8Value(try_catch.StackTrace()->ToString()));
-		}
+		MakeCallback(handler, handler, 6, args);
 	}
 
-	void SetHandler(Handle<Object> Holder, Handle<Function> callback)
+	Handle<Value> SetSignalHandler(const Arguments& args)
 	{
-		if (signal_handler == NULL) {
-			signal_handler = new NodeDBus::NodeCallback();
-		} else {
-			signal_handler->Holder.Dispose();
-			signal_handler->cb.Dispose();
-		}
+		HandleScope scope;
 
-		signal_handler->Holder = Persistent<Object>::New(Holder);
-		signal_handler->cb = Persistent<Function>::New(callback);
+		handler.Dispose();
+		handler.Clear();
+
+		handler = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
+
+		return Undefined();
 	}
 
 	Handle<Value> EmitSignal(const Arguments& args)
@@ -111,12 +101,12 @@ namespace Signal {
 			char *sig = strdup(*String::Utf8Value(signatures->Get(i)->ToString()));
 
 			if (!Encoder::EncodeObject(arg, &iter, sig)) {
-				free(sig);
+				dbus_free(sig);
 				printf("Failed to encode arguments of signal\n");
 				break;
 			}
 
-			free(sig);
+			dbus_free(sig);
 		}
 
 		// Send out message
@@ -124,9 +114,9 @@ namespace Signal {
 		dbus_connection_flush(bus->connection);
 		dbus_message_unref(message);
 
-		free(path);
-		free(interface);
-		free(signal);
+		dbus_free(path);
+		dbus_free(interface);
+		dbus_free(signal);
 
 		return Undefined();
 	}

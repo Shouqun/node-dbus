@@ -7,9 +7,9 @@ namespace ObjectHandler {
 	using namespace v8;
 	using namespace std;
 
-	void SetHandler(Handle<Object> Holder, Handle<Function> callback);
 	Handle<Value> RegisterObjectPath(Arguments const &args);
 	Handle<Value> SendMessageReply(Arguments const &args);
+	Handle<Value> SetObjectHandler(const Arguments& args);
 }
 
 #endif
