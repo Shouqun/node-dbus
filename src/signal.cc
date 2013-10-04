@@ -13,13 +13,14 @@ namespace Signal {
 	using namespace v8;
 	using namespace std;
 
-	Persistent<Function> handler;
+	Persistent<Function> handler = Persistent<Function>::New(Handle<Function>::Cast(Null()));
 
 	void DispatchSignal(Handle<Value> args[])
 	{
 		HandleScope scope;
 
-		MakeCallback(handler, handler, 6, args);
+		if (!handler->IsNull())
+			MakeCallback(handler, handler, 6, args);
 	}
 
 	Handle<Value> SetSignalHandler(const Arguments& args)

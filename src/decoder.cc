@@ -168,7 +168,7 @@ namespace Decoder {
 
 				// Getting element
 				sig = dbus_message_iter_get_signature(&internal_iter);
-				Handle<Value> value = DecodeMessageIter(&internal_iter, dbus_message_iter_get_signature(&internal_iter));
+				Handle<Value> value = DecodeMessageIter(&internal_iter, sig);
 				dbus_free(sig);
 				if (value->IsUndefined())
 					continue;
