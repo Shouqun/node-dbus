@@ -277,8 +277,7 @@ namespace NodeDBus {
 		DBusError error;
 
 		Local<Object> bus_object = args[0]->ToObject();
-		String::Utf8Value rule(args[1]->ToString());
-		char *rule_str = strdup(*rule);
+		char *rule_str = strdup(*String::Utf8Value(args[1]->ToString()));
 
 		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 
@@ -286,11 +285,11 @@ namespace NodeDBus {
 		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
 
-		dbus_free(rule_str);
-
 		if (dbus_error_is_set(&error)) {
 			printf("Failed to add rule: %s\n", error.message);
 		}
+
+		dbus_free(rule_str);
 
 		return Undefined();
 	}
