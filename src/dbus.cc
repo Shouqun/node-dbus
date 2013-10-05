@@ -291,6 +291,20 @@ namespace NodeDBus {
 		return Undefined();
 	}
 
+	Handle<Value> SetMaxMessageSize(const Arguments& args)
+	{
+		HandleScope scope;
+
+		Local<Object> bus_object = args[0]->ToObject();
+
+		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
+
+		dbus_connection_set_max_message_size(bus->connection, args[1]->ToInteger()->Value());
+		dbus_connection_flush(bus->connection);
+
+		return Undefined();
+	}
+
 	static void init(Handle<Object> target) {
 		HandleScope scope;
 
@@ -303,6 +317,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", Signal::SetSignalHandler);
 		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);
+		NODE_SET_METHOD(target, "setMaxMessageSize", SetMaxMessageSize);
 		NODE_SET_METHOD(target, "emitSignal", Signal::EmitSignal);
 	}
 
