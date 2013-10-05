@@ -28,9 +28,6 @@ namespace NodeDBus {
 		DBusMessage *reply_message;
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
 
-		if (user_data == NULL)
-			printf("NULLLL\n");
-
 		dbus_error_init(&error);
 
 		// Getting reply message
