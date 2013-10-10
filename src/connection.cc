@@ -227,15 +227,6 @@ namespace Connection {
 
 		// Initializing signal handler
 		dbus_connection_add_filter(connection, signal_filter, NULL, NULL);
-
-		// Add match for signal
-		DBusError error;
-		dbus_error_init(&error);
-		dbus_bus_add_match(bus->connection, "type='signal'", &error);
-		dbus_connection_flush(bus->connection);
-		if (dbus_error_is_set(&error)) {
-			printf("Failed to add rule: %s\n", error.message);
-		}
 	}
 
 }

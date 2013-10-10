@@ -15,21 +15,11 @@
 
 namespace NodeDBus {
 
-	static void release_pending(uv_async_t *handle, int status)
-	{
-		DBusPendingCall *pending = static_cast<DBusPendingCall *>(handle->data);
-
-		dbus_pending_call_unref(pending);
-	}
-
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
 		DBusError error;
 		DBusMessage *reply_message;
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
-
-		if (user_data == NULL)
-			printf("NULLLL\n");
 
 		dbus_error_init(&error);
 
@@ -39,6 +29,7 @@ namespace NodeDBus {
 			dbus_pending_call_unref(pending);
 			return;
 		}
+		dbus_pending_call_unref(pending);
 
 		// Get current context from V8
 		Local<Context> context = Context::GetCurrent();
@@ -56,11 +47,6 @@ namespace NodeDBus {
 
 		// Release
 		dbus_message_unref(reply_message);
-		uv_async_t *release_handle = new uv_async_t;
-		release_handle->data = (void *)pending;
-		uv_async_init(uv_default_loop(), release_handle, release_pending);
-		uv_async_send(release_handle);
-		uv_unref((uv_handle_t *)release_handle);
 	}
 
 	static void method_free(void *user_data)
@@ -277,8 +263,7 @@ namespace NodeDBus {
 		DBusError error;
 
 		Local<Object> bus_object = args[0]->ToObject();
-		String::Utf8Value rule(args[1]->ToString());
-		char *rule_str = strdup(*rule);
+		char *rule_str = strdup(*String::Utf8Value(args[1]->ToString()));
 
 		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 
@@ -286,11 +271,25 @@ namespace NodeDBus {
 		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
 
-		dbus_free(rule_str);
-
 		if (dbus_error_is_set(&error)) {
 			printf("Failed to add rule: %s\n", error.message);
 		}
+
+		dbus_free(rule_str);
+
+		return Undefined();
+	}
+
+	Handle<Value> SetMaxMessageSize(const Arguments& args)
+	{
+		HandleScope scope;
+
+		Local<Object> bus_object = args[0]->ToObject();
+
+		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
+
+		dbus_connection_set_max_message_size(bus->connection, args[1]->ToInteger()->Value());
+		dbus_connection_flush(bus->connection);
 
 		return Undefined();
 	}
@@ -307,6 +306,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", Signal::SetSignalHandler);
 		NODE_SET_METHOD(target, "addSignalFilter", AddSignalFilter);
+		NODE_SET_METHOD(target, "setMaxMessageSize", SetMaxMessageSize);
 		NODE_SET_METHOD(target, "emitSignal", Signal::EmitSignal);
 	}
 
