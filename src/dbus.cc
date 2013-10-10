@@ -42,11 +42,11 @@ namespace NodeDBus {
 			result
 		};
 
-		// Invoke
-		MakeCallback(data->callback, data->callback, 1, args);
-
 		// Release
 		dbus_message_unref(reply_message);
+
+		// Invoke
+		MakeCallback(data->callback, data->callback, 1, args);
 	}
 
 	static void method_free(void *user_data)
@@ -103,6 +103,19 @@ namespace NodeDBus {
 		Connection::Init(bus);
 
 		return scope.Close(bus_object);
+	}
+
+	Handle<Value> ReleaseBus(const Arguments& args)
+	{
+		HandleScope scope;
+
+		Local<Object> bus_object = args[0]->ToObject();
+		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
+
+		// Release connection handler
+		Connection::UnInit(bus);
+
+		return Undefined();
 	}
 
 	Handle<Value> CallMethod(const Arguments& args)
@@ -185,24 +198,31 @@ namespace NodeDBus {
 		}
 
 		// Send message and call method
-		DBusPendingCall *pending;
-		if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout) || !pending) {
-			if (message != NULL)
-				dbus_message_unref(message);
+		if (!args[8]->IsFunction()) {
 
-			return ThrowException(Exception::Error(String::New("Failed to call method: Out of Memory")));
-		}
+			dbus_connection_send(bus->connection, message, NULL);
 
-		// Set callback for waiting
-		DBusAsyncData *data = new DBusAsyncData;
-		data->pending = pending;
-		Handle<Function> callback = Handle<Function>::Cast(args[8]);
-		data->callback = Persistent<Function>::New(callback);
-		if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
-			if (message != NULL)
-				dbus_message_unref(message);
+		} else {
 
-			return ThrowException(Exception::Error(String::New("Failed to call method: Out of Memory")));
+			DBusPendingCall *pending;
+			if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout) || !pending) {
+				if (message != NULL)
+					dbus_message_unref(message);
+
+				return ThrowException(Exception::Error(String::New("Failed to call method: Out of Memory")));
+			}
+
+			// Set callback for waiting
+			DBusAsyncData *data = new DBusAsyncData;
+			data->pending = pending;
+			Handle<Function> callback = Handle<Function>::Cast(args[8]);
+			data->callback = Persistent<Function>::New(callback);
+			if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
+				if (message != NULL)
+					dbus_message_unref(message);
+
+				return ThrowException(Exception::Error(String::New("Failed to call method: Out of Memory")));
+			}
 		}
 
 		if (message != NULL)
@@ -268,11 +288,17 @@ namespace NodeDBus {
 		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 
 		dbus_error_init(&error);
+
 		dbus_bus_add_match(bus->connection, rule_str, &error);
 		dbus_connection_flush(bus->connection);
 
 		if (dbus_error_is_set(&error)) {
-			printf("Failed to add rule: %s\n", error.message);
+			printf("Failed to add rule: %s\n", rule_str);
+			dbus_free(rule_str);
+
+			return ThrowException(Exception::SyntaxError(
+				String::New(error.message)
+			));
 		}
 
 		dbus_free(rule_str);
@@ -298,6 +324,7 @@ namespace NodeDBus {
 		HandleScope scope;
 
 		NODE_SET_METHOD(target, "getBus", GetBus);
+		NODE_SET_METHOD(target, "releaseBus", ReleaseBus);
 		NODE_SET_METHOD(target, "callMethod", CallMethod);
 		NODE_SET_METHOD(target, "requestName", RequestName);
 		NODE_SET_METHOD(target, "registerObjectPath", ObjectHandler::RegisterObjectPath);
