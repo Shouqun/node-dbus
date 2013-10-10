@@ -81,8 +81,7 @@ namespace Encoder {
 		case DBUS_TYPE_OBJECT_PATH:
 		case DBUS_TYPE_SIGNATURE:
 		{
-			String::Utf8Value data_val(value->ToString());
-			char *data = strdup(*data_val);
+			char *data = strdup(*String::Utf8Value(value->ToString()));
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
 				dbus_free(data);
