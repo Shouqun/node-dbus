@@ -28,6 +28,7 @@ namespace NodeDBus {
 	typedef struct {
 		BusType type;
 		DBusConnection *connection;
+		uv_async_t *loop;
 	} BusObject;
 
 	typedef struct {
