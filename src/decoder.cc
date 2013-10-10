@@ -15,9 +15,16 @@ namespace Decoder {
 	{
 		HandleScope scope;
 		DBusSignatureIter siter;
+		int cur_type = dbus_message_iter_get_arg_type(iter);
+
+		// Trying to use signature to handle this iterator if type cannot be recognized
+		if (cur_type == DBUS_TYPE_INVALID) {
+			dbus_signature_iter_init(&siter, signature);
+			cur_type = dbus_signature_iter_get_current_type(&siter);
+		}
 
 		// Get type of current value
-		switch(dbus_message_iter_get_arg_type(iter)) {
+		switch(cur_type) {
 		case DBUS_TYPE_BOOLEAN:
 		{
 			dbus_bool_t value = false;
@@ -60,10 +67,6 @@ namespace Decoder {
 
 			// Create a object
 			Handle<Object> result = Object::New();
-
-			// Make sure it doesn't empty
-			if (dbus_message_iter_get_arg_type(iter) == DBUS_TYPE_INVALID)
-				return scope.Close(result);
 
 			do {
 				// Getting sub iterator
