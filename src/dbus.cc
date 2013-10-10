@@ -15,13 +15,6 @@
 
 namespace NodeDBus {
 
-	static void release_pending(uv_async_t *handle, int status)
-	{
-		DBusPendingCall *pending = static_cast<DBusPendingCall *>(handle->data);
-
-		dbus_pending_call_unref(pending);
-	}
-
 	static void method_callback(DBusPendingCall *pending, void *user_data)
 	{
 		DBusError error;
@@ -36,6 +29,7 @@ namespace NodeDBus {
 			dbus_pending_call_unref(pending);
 			return;
 		}
+		dbus_pending_call_unref(pending);
 
 		// Get current context from V8
 		Local<Context> context = Context::GetCurrent();
@@ -53,11 +47,6 @@ namespace NodeDBus {
 
 		// Release
 		dbus_message_unref(reply_message);
-		uv_async_t *release_handle = new uv_async_t;
-		release_handle->data = (void *)pending;
-		uv_async_init(uv_default_loop(), release_handle, release_pending);
-		uv_async_send(release_handle);
-		uv_unref((uv_handle_t *)release_handle);
 	}
 
 	static void method_free(void *user_data)

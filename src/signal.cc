@@ -19,8 +19,10 @@ namespace Signal {
 	{
 		HandleScope scope;
 
-		if (!handler->IsNull())
-			MakeCallback(handler, handler, 6, args);
+		if (handler->IsNull())
+			return;
+
+		MakeCallback(handler, handler, 6, args);
 	}
 
 	Handle<Value> SetSignalHandler(const Arguments& args)
