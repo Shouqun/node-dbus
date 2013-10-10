@@ -8,6 +8,7 @@ namespace Connection {
 	using namespace std;
 
 	void Init(NodeDBus::BusObject *bus);
+	void UnInit(NodeDBus::BusObject *bus);
 }
 
 #endif
