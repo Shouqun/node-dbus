@@ -53,7 +53,8 @@ namespace ObjectHandler {
 		};
 
 		// Keep message live for reply
-		dbus_message_ref(message);
+		if (!dbus_message_get_no_reply(message))
+			dbus_message_ref(message);
 
 		// Invoke
 		MakeCallback(handler, handler, 7, args);
@@ -145,6 +146,9 @@ namespace ObjectHandler {
 
 		DBusConnection *connection = static_cast<DBusConnection *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
 		DBusMessage *message = static_cast<DBusMessage *>(External::Unwrap(args[0]->ToObject()->GetInternalField(1)));
+
+		if (dbus_message_get_no_reply(message))
+			return Undefined();
 
 		char *signature = strdup(*String::Utf8Value(args[2]->ToString()));
 		_SendMessageReply(connection, message, args[1], signature);
