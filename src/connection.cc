@@ -17,6 +17,27 @@ namespace Connection {
 	using namespace v8;
 	using namespace std;
 
+	static void free_later (uv_work_t* req) {
+	}
+
+	static void free_watcher_later (uv_work_t* req) {
+		if (req->data != NULL) {
+			uv_poll_t *watcher = static_cast<uv_poll_t *>(req->data);
+			delete watcher;
+			req->data = NULL;
+		}
+		delete req;
+	}
+
+	static void free_timer_later (uv_work_t* req) {
+		if (req->data != NULL) {
+			uv_timer_t *timer = static_cast<uv_timer_t *>(req->data);
+			delete timer;
+			req->data = NULL;
+		}
+		delete req;
+	}
+
 	static void watcher_handle(uv_poll_t *watcher, int status, int events)
 	{
 		DBusWatch *watch = static_cast<DBusWatch *>(watcher->data);
@@ -44,6 +65,10 @@ namespace Connection {
 		uv_ref((uv_handle_t *)watcher);
 		uv_poll_stop(watcher);
 		uv_close((uv_handle_t *)watcher, NULL);
+
+		uv_work_t *req = new uv_work_t;
+		req->data = (void *)watcher;
+		uv_queue_work(uv_default_loop(), req, free_later, (uv_after_work_cb)free_watcher_later);
 	}
 
 	static dbus_bool_t watch_add(DBusWatch *watch, void *data)
@@ -111,6 +136,10 @@ namespace Connection {
 		// Stop timer
 		uv_timer_stop(timer);
 		uv_unref((uv_handle_t *)timer);
+
+		uv_work_t *req = new uv_work_t;
+		req->data = (void *)timer;
+		uv_queue_work(uv_default_loop(), req, free_later, (uv_after_work_cb)free_timer_later);
 	}
 
 	static dbus_bool_t timeout_add(DBusTimeout *timeout, void *data)
