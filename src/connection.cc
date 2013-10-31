@@ -17,25 +17,19 @@ namespace Connection {
 	using namespace v8;
 	using namespace std;
 
-	static void free_later (uv_work_t* req) {
+	static void connection_loop_free(uv_handle_t* handle) {
+		uv_async_t *connection_loop = reinterpret_cast<uv_async_t *>(handle);
+		delete connection_loop;
 	}
 
-	static void free_watcher_later (uv_work_t* req) {
-		if (req->data != NULL) {
-			uv_poll_t *watcher = static_cast<uv_poll_t *>(req->data);
-			delete watcher;
-			req->data = NULL;
-		}
-		delete req;
+	static void watcher_free(uv_handle_t* handle) {
+		uv_poll_t *watcher = reinterpret_cast<uv_poll_t *>(handle);
+		delete watcher;
 	}
 
-	static void free_timer_later (uv_work_t* req) {
-		if (req->data != NULL) {
-			uv_timer_t *timer = static_cast<uv_timer_t *>(req->data);
-			delete timer;
-			req->data = NULL;
-		}
-		delete req;
+	static void timer_free(uv_handle_t* handle) {
+		uv_timer_t *timer = reinterpret_cast<uv_timer_t *>(handle);
+		delete timer;
 	}
 
 	static void watcher_handle(uv_poll_t *watcher, int status, int events)
@@ -52,7 +46,7 @@ namespace Connection {
 		dbus_watch_handle(watch, flags);
 	}
 
-	static void watcher_free(void *data)
+	static void watcher_close(void *data)
 	{
 		uv_poll_t *watcher = static_cast<uv_poll_t *>(data);
 
@@ -64,11 +58,7 @@ namespace Connection {
 		// Stop watching
 		uv_ref((uv_handle_t *)watcher);
 		uv_poll_stop(watcher);
-		uv_close((uv_handle_t *)watcher, NULL);
-
-		uv_work_t *req = new uv_work_t;
-		req->data = (void *)watcher;
-		uv_queue_work(uv_default_loop(), req, free_later, (uv_after_work_cb)free_watcher_later);
+		uv_close((uv_handle_t *)watcher, (uv_close_cb)watcher_free);
 	}
 
 	static dbus_bool_t watch_add(DBusWatch *watch, void *data)
@@ -95,7 +85,7 @@ namespace Connection {
 		uv_poll_start(watcher, events, watcher_handle);
 		uv_unref((uv_handle_t *)watcher);
 
-		dbus_watch_set_data(watch, (void *)watcher, watcher_free);
+		dbus_watch_set_data(watch, (void *)watcher, watcher_close);
 
 		return true;
 	}
@@ -124,7 +114,7 @@ namespace Connection {
 		dbus_timeout_handle(timeout);
 	}
 
-	static void timer_free(void *data)
+	static void timer_close(void *data)
 	{
 		uv_timer_t *timer = static_cast<uv_timer_t *>(data);
 
@@ -136,10 +126,7 @@ namespace Connection {
 		// Stop timer
 		uv_timer_stop(timer);
 		uv_unref((uv_handle_t *)timer);
-
-		uv_work_t *req = new uv_work_t;
-		req->data = (void *)timer;
-		uv_queue_work(uv_default_loop(), req, free_later, (uv_after_work_cb)free_timer_later);
+		uv_close((uv_handle_t *)timer, (uv_close_cb)timer_free);
 	}
 
 	static dbus_bool_t timeout_add(DBusTimeout *timeout, void *data)
@@ -154,15 +141,13 @@ namespace Connection {
 		uv_timer_init(uv_default_loop(), timer);
 		uv_timer_start(timer, timer_handle, dbus_timeout_get_interval(timeout), 0);
 
-		dbus_timeout_set_data(timeout, (void *)timer, timer_free);
+		dbus_timeout_set_data(timeout, (void *)timer, timer_close);
 
 		return true;
 	}
 
 	static void timeout_remove(DBusTimeout *timeout, void *data)
 	{
-		uv_timer_t *timer = static_cast<uv_timer_t *>(dbus_timeout_get_data(timeout));
-
 		dbus_timeout_set_data(timeout, NULL, NULL);
 	}
 
@@ -174,18 +159,29 @@ namespace Connection {
 			timeout_remove(timeout, data);
 	}
 
-	static void connection_loop(uv_async_t *connection_loop_handle, int status)
+	static void connection_loop_handle(uv_async_t *connection_loop, int status)
 	{
-		DBusConnection *connection = static_cast<DBusConnection *>(connection_loop_handle->data);
+		DBusConnection *connection = static_cast<DBusConnection *>(connection_loop->data);
 		dbus_connection_read_write(connection, 0);
 
 		while(dbus_connection_dispatch(connection) == DBUS_DISPATCH_DATA_REMAINS);
 	}
 
+	static void connection_loop_close(void *data) {
+		uv_async_t *connection_loop = static_cast<uv_async_t *>(data);
+
+		if (connection_loop == NULL)
+			return;
+
+		connection_loop->data = NULL;
+
+		uv_close((uv_handle_t *)connection_loop, (uv_close_cb)connection_loop_free);
+	}
+
 	static void connection_wakeup(void *data)
 	{
-		uv_async_t *connection_loop_handle = static_cast<uv_async_t *>(data);
-		uv_async_send(connection_loop_handle);
+		uv_async_t *connection_loop = static_cast<uv_async_t *>(data);
+		uv_async_send(connection_loop);
 	}
 
 	static DBusHandlerResult signal_filter(DBusConnection *connection, DBusMessage *message, void *user_data)
@@ -242,12 +238,12 @@ namespace Connection {
 		dbus_connection_set_timeout_functions(connection, timeout_add, timeout_remove, timeout_toggled, NULL, NULL);
 
 		// Initializing loop
-		uv_async_t *connection_loop_handle = new uv_async_t;
-		connection_loop_handle->data = (void *)connection;
-		uv_async_init(uv_default_loop(), connection_loop_handle, connection_loop);
-		bus->loop = connection_loop_handle;
+		uv_async_t *connection_loop = new uv_async_t;
+		connection_loop->data = (void *)connection;
+		uv_async_init(uv_default_loop(), connection_loop, connection_loop_handle);
+		bus->loop = connection_loop;
 
-		dbus_connection_set_wakeup_main_function(connection, connection_wakeup, connection_loop_handle, free);
+		dbus_connection_set_wakeup_main_function(connection, connection_wakeup, connection_loop, connection_loop_close);
 
 		// Initializing signal handler
 		dbus_connection_add_filter(connection, signal_filter, NULL, NULL);
