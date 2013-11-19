@@ -21,7 +21,6 @@ iface1.addMethod('Hello', { out: DBus.Define(String) }, function(callback) {
 });
 
 iface1.addMethod('SendObject', { in: [ DBus.Define(Object) ], out: DBus.Define(Object) }, function(obj, callback) {
-	console.log(obj);
 	callback(obj);
 });
 
