@@ -32,4 +32,10 @@ bus.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'n
 		console.log(contacts);
 	};
 	iface.GetContacts();
+
+	// Error handling
+	iface.SendObject['finish'] = function(ret) {
+		console.log(ret);
+	};
+	iface.SendObject('Wrong arguments');
 });
