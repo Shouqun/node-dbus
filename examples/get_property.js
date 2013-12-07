@@ -6,20 +6,20 @@ var bus = dbus.getBus('session');
 
 bus.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'nodejs.dbus.ExampleService.Interface1', function(err, iface) {
 
-	iface.getProperty('Author', function(value) {
+	iface.getProperty('Author', function(err, value) {
 		console.log(value);
 	});
 
-	iface.getProperty('JavaScriptOS', function(value) {
+	iface.getProperty('JavaScriptOS', function(err, value) {
 		console.log(value);
 	});
 
-	iface.getProperty('URL', function(value) {
+	iface.getProperty('URL', function(err, value) {
 		console.log(value);
 	});
 
 	// Get all properties
-	iface.getProperties(function(props) {
+	iface.getProperties(function(err, props) {
 		console.log('Properties:');
 		console.log(props);
 	});

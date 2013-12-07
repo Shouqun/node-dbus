@@ -36,9 +36,16 @@ namespace NodeDBus {
 		Context::Scope ctxScope(context);
 		HandleScope scope;
 
+		Handle<Value> err = Null();
+		if (dbus_error_is_set(&error)) {
+			err = Exception::Error(String::New(error.message));
+			dbus_error_free(&error);
+		}
+
 		// Decode message for arguments
 		Handle<Value> result = Decoder::DecodeMessage(reply_message);
 		Handle<Value> args[] = {
+			err,
 			result
 		};
 
@@ -46,7 +53,7 @@ namespace NodeDBus {
 		dbus_message_unref(reply_message);
 
 		// Invoke
-		MakeCallback(data->callback, data->callback, 1, args);
+		MakeCallback(data->callback, data->callback, 2, args);
 	}
 
 	static void method_free(void *user_data)
