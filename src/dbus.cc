@@ -40,6 +40,8 @@ namespace NodeDBus {
 		if (dbus_error_is_set(&error)) {
 			err = Exception::Error(String::New(error.message));
 			dbus_error_free(&error);
+		} else if (dbus_message_get_type(reply_message) == DBUS_MESSAGE_TYPE_ERROR) {
+			err = Exception::Error(String::New(dbus_message_get_error_name(reply_message)));
 		}
 
 		// Decode message for arguments
@@ -336,6 +338,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "requestName", RequestName);
 		NODE_SET_METHOD(target, "registerObjectPath", ObjectHandler::RegisterObjectPath);
 		NODE_SET_METHOD(target, "sendMessageReply", ObjectHandler::SendMessageReply);
+		NODE_SET_METHOD(target, "sendErrorMessageReply", ObjectHandler::SendErrorMessageReply);
 		NODE_SET_METHOD(target, "setObjectHandler", ObjectHandler::SetObjectHandler);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", Signal::SetSignalHandler);

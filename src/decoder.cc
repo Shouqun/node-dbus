@@ -215,7 +215,7 @@ namespace Decoder {
 			return Undefined();
 
 		if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR)
-			return String::New(dbus_message_get_error_name(message));
+			return Undefined();
 
 		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID)
 			return Undefined();

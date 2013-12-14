@@ -157,6 +157,38 @@ namespace ObjectHandler {
 		return Undefined();
 	}
 
+	Handle<Value> SendErrorMessageReply(Arguments const &args)
+	{
+		HandleScope scope;
+
+		if (!args[0]->IsObject()) {
+			return ThrowException(Exception::TypeError(
+				String::New("first argument must be a object")
+			));
+		}
+
+		DBusConnection *connection = static_cast<DBusConnection *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
+		DBusMessage *message = static_cast<DBusMessage *>(External::Unwrap(args[0]->ToObject()->GetInternalField(1)));
+
+		// Getting error message from arguments
+		char *name = strdup(*String::Utf8Value(args[1]->ToString()));
+		char *msg = strdup(*String::Utf8Value(args[2]->ToString()));
+
+		// Initializing error message
+		DBusMessage *error_message = dbus_message_new_error(message, name, msg);
+
+		// Send error message
+		dbus_connection_send(connection, error_message, NULL);
+		dbus_connection_flush(connection);
+
+		// Release
+		dbus_message_unref(error_message);
+		dbus_free(name);
+		dbus_free(msg);
+
+		return Undefined();
+	}
+
 	Handle<Value> SetObjectHandler(const Arguments& args)
 	{
 		HandleScope scope;
