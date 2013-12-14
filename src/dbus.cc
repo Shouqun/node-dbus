@@ -40,6 +40,8 @@ namespace NodeDBus {
 		if (dbus_error_is_set(&error)) {
 			err = Exception::Error(String::New(error.message));
 			dbus_error_free(&error);
+		} else if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR) {
+			err = Exception::Error(String::New(dbus_message_get_error_name(message)));
 		}
 
 		// Decode message for arguments
