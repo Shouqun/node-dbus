@@ -338,6 +338,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(target, "requestName", RequestName);
 		NODE_SET_METHOD(target, "registerObjectPath", ObjectHandler::RegisterObjectPath);
 		NODE_SET_METHOD(target, "sendMessageReply", ObjectHandler::SendMessageReply);
+		NODE_SET_METHOD(target, "sendErrorMessageReply", ObjectHandler::SendErrorMessageReply);
 		NODE_SET_METHOD(target, "setObjectHandler", ObjectHandler::SetObjectHandler);
 		NODE_SET_METHOD(target, "parseIntrospectSource", ParseIntrospectSource);
 		NODE_SET_METHOD(target, "setSignalHandler", Signal::SetSignalHandler);

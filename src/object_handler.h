@@ -9,6 +9,7 @@ namespace ObjectHandler {
 
 	Handle<Value> RegisterObjectPath(Arguments const &args);
 	Handle<Value> SendMessageReply(Arguments const &args);
+	Handle<Value> SendErrorMessageReply(Arguments const &args);
 	Handle<Value> SetObjectHandler(const Arguments& args);
 }
 
