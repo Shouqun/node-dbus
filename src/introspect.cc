@@ -169,7 +169,7 @@ namespace Introspect {
 
 		XML_ParserFree(parser);
 
-		Handle<Object> obj = introspect_obj->obj;
+		Handle<Object> obj = scope.Close(introspect_obj->obj);
 
 		// Clear
 		introspect_obj->obj.Dispose();
@@ -182,7 +182,7 @@ namespace Introspect {
 		introspect_obj->current_signal.Clear();
 		delete introspect_obj;
 
-		return scope.Close(obj);
+		return obj;
 	}
 
 }
