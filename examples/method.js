@@ -30,6 +30,7 @@ bus.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'n
 	iface.GetContacts['timeout'] = 1000;
 	iface.GetContacts['finish'] = function(contacts) {
 		console.log(contacts);
+		iface.SendObject(contacts);
 	};
 	iface.GetContacts();
 
