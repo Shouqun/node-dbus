@@ -82,15 +82,90 @@ namespace Encoder {
 		}
 
 		case DBUS_TYPE_INT16:
-		case DBUS_TYPE_INT32:
+		{
+			dbus_int16_t data = value->IntegerValue();
+			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
 		case DBUS_TYPE_INT64:
+		{
+			dbus_int64_t data = value->IntegerValue();
+			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
 		case DBUS_TYPE_UINT16:
-		case DBUS_TYPE_UINT32:
+		{
+			dbus_uint16_t data = value->IntegerValue();
+			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+		
 		case DBUS_TYPE_UINT64:
-		case DBUS_TYPE_BYTE:
 		{
 			dbus_uint64_t data = value->IntegerValue();
 			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
+		case DBUS_TYPE_BYTE:
+		{
+			unsigned char data = value->IntegerValue();
+			// printf("DBUS_TYPE_BYTE: ");
+			// printf("value: %u\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
+		case DBUS_TYPE_UINT32:
+		{
+			dbus_uint32_t data = value->Uint32Value();
+			// printf("DBUS_TYPE_UINT32: ");
+			// printf("value: %u\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
+		case DBUS_TYPE_INT32:
+		{
+			dbus_int32_t data = value->Int32Value();
+			// printf("DBUS_TYPE_INT32: ");
+			// printf("value: %u\n",data);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
 				printf("Failed to encode numeric value\n");
