@@ -220,14 +220,28 @@ namespace Decoder {
 		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID)
 			return Undefined();
 
+		Handle<Array> result = Array::New();
+		unsigned int count = 0;
 		char *signature = NULL;
-		signature = dbus_message_iter_get_signature(&iter);
-		Handle<Value> obj = DecodeMessageIter(&iter, signature);
-		dbus_free(signature);
-		if (obj->IsUndefined())
-			return Undefined();
+		Handle<Value> value;
 
-		return scope.Close(obj);
+		do {
+			signature = dbus_message_iter_get_signature(&iter);
+			value = DecodeMessageIter(&iter, signature);
+			dbus_free(signature);
+			if (value->IsUndefined())
+				continue;
+
+			result->Set(count, value);
+
+			count++;
+		} while(dbus_message_iter_next(&iter));
+
+		if (count == 1) {
+			return scope.Close(value);
+		}
+
+		return scope.Close(result);
 	}
 
 	Handle<Value> DecodeArguments(DBusMessage *message)
