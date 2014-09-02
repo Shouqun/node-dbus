@@ -77,7 +77,7 @@ namespace NodeDBus {
 		dbus_error_init(&error);
 
 		if (!args[0]->IsNumber())
-			return ThrowException(Exception::Error(String::New("First parameter is integer")));
+			return ThrowException(Exception::TypeError(String::New("First parameter must be an integer")));
 
 		// Create connection
 		switch(args[0]->IntegerValue()) {
@@ -90,8 +90,10 @@ namespace NodeDBus {
 			break;
 		}
 
-		if (connection == NULL)
-			return ThrowException(Exception::Error(String::New("Failed to get bus object")));
+		if (connection == NULL) {
+			if (dbus_error_is_set(&error)) return ThrowException(Exception::Error(String::New(error.message)));
+			else return ThrowException(Exception::Error(String::New("Failed to get bus object")));
+		}
 
 		// Initializing connection object
 		Handle<ObjectTemplate> object_template = ObjectTemplate::New();
@@ -141,7 +143,7 @@ namespace NodeDBus {
 
 		// Get bus from internal field
 		if (!args[0]->IsObject())
-			return ThrowException(Exception::Error(String::New("First argument must be a object ")));
+			return ThrowException(Exception::TypeError(String::New("First argument must be an object ")));
 
 		Local<Object> bus_object = args[0]->ToObject();
 		BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
@@ -248,7 +250,7 @@ namespace NodeDBus {
 
 		if (!args[0]->IsObject()) {
 			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a object (bus)")
+				String::New("first argument must be an object (bus)")
 			));
 		}
 
