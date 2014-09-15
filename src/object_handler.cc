@@ -105,7 +105,7 @@ namespace ObjectHandler {
 
 		if (!args[0]->IsObject()) {
 			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a object (bus)")
+				String::New("first argument must be an object (bus)")
 			));
 		}
 
@@ -140,7 +140,7 @@ namespace ObjectHandler {
 
 		if (!args[0]->IsObject()) {
 			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a object")
+				String::New("first argument must be an object")
 			));
 		}
 
@@ -163,7 +163,7 @@ namespace ObjectHandler {
 
 		if (!args[0]->IsObject()) {
 			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a object")
+				String::New("first argument must be an object")
 			));
 		}
 

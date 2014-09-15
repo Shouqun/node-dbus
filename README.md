@@ -2,7 +2,15 @@
 node-dbus is a D-Bus binding for Node.js.
 
 ## How To Build
-To build, do: `node-gyp configure build`
+To build, do: `node-gyp configure build` or `npm install`.
+
+## Note on systems without X11
+If no X server is running, the module fails when attempting to obtain a D-Bus
+connection at `dbus._dbus.getBus()`. This can be remedied by setting two
+environment variables manually (the actual bus address might be different):
+
+	process.env.DISPLAY = ':0';
+	process.env.DBUS_SESSION_BUS_ADDRESS = 'unix:path=/run/dbus/system_bus_socket';
 
 ## License 
 
