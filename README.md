@@ -1,8 +1,36 @@
 # node-dbus  
 node-dbus is a D-Bus binding for Node.js.
 
+## Installation
+
+```bash
+$ npm install dbus
+```
+
 ## How To Build
 To build, do: `node-gyp configure build` or `npm install`.
+
+## Dependencies
+**Node-gyp**
+`$ npm install -g node-gyp`  
+[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
+
+**libdbus**
+`$ sudo apt-get install libdbus-1-dev`
+or equivalent for your system
+
+**glib2.0**
+`$ sudo apt-get install libglib2.0-dev`
+or equivalent for your system
+
+## Getting Started
+Best way to get started is by looking at the examples. After the build:
+
+1. Navigate to `path/to/dbus/examples` folder
+1. Run `node service.js &`
+1. Run  `node hello.js`
+
+Work your way through other examples to explore supported functionality.
 
 ## Note on systems without X11
 If no X server is running, the module fails when attempting to obtain a D-Bus
