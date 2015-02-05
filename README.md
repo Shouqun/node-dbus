@@ -11,16 +11,16 @@ $ npm install dbus
 To build, do: `node-gyp configure build` or `npm install`.
 
 ## Dependencies
-**Node-gyp**
+**Node-gyp**  
 `$ npm install -g node-gyp`  
 [https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
 
-**libdbus**
-`$ sudo apt-get install libdbus-1-dev`
+**libdbus**  
+`$ sudo apt-get install libdbus-1-dev`  
 or equivalent for your system
 
-**glib2.0**
-`$ sudo apt-get install libglib2.0-dev`
+**glib2.0**  
+`$ sudo apt-get install libglib2.0-dev`  
 or equivalent for your system
 
 ## Getting Started
