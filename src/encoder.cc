@@ -3,6 +3,7 @@
 #include <cstring>
 #include <stdlib.h>
 #include <dbus/dbus.h>
+#include <iostream>
 
 #include "encoder.h"
 
@@ -12,14 +13,27 @@ namespace Encoder {
 	using namespace v8;
 	using namespace std;
 
+	bool IsByte(Handle<Value> value)
+	{
+		if(value->IsUint32()) {
+			int number = value->Int32Value();
+			if(number >= 0 && number <= 255) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	const char *GetSignatureFromV8Type(Handle<Value>& value)
 	{
 		if (value->IsTrue() || value->IsFalse() || value->IsBoolean() ) {
 			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
+		} else if (IsByte(value)) {
+			return const_cast<char*>(DBUS_TYPE_BYTE_AS_STRING);
+		} else if (value->IsNumber()) {
+			return const_cast<char*>(DBUS_TYPE_UINT32_AS_STRING);
 		} else if (value->IsInt32()) {
 			return const_cast<char*>(DBUS_TYPE_INT32_AS_STRING);
-		} else if (value->IsUint32()) {
-			return const_cast<char*>(DBUS_TYPE_UINT32_AS_STRING);
 		} else if (value->IsNumber()) {
 			return const_cast<char*>(DBUS_TYPE_DOUBLE_AS_STRING);
 		} else if (value->IsString()) {
@@ -38,6 +52,8 @@ namespace Encoder {
 
 	bool EncodeObject(Handle<Value> value, DBusMessageIter *iter, const char *signature)
 	{
+		// printf("EncodeObject %s\n",signature);
+		// printf("%p", value);
 		HandleScope scope;
 		DBusSignatureIter siter;
 		int type;
@@ -47,6 +63,12 @@ namespace Encoder {
 		type = dbus_signature_iter_get_current_type(&siter);
 
 		switch(type) {
+		case DBUS_TYPE_INVALID:
+		// case DBUS_TYPE_INVALID_AS_STRING:
+		{
+			printf("Invalid type\n");
+		}
+		break;
 		case DBUS_TYPE_BOOLEAN:
 		{
 			dbus_bool_t data = value->BooleanValue();
@@ -60,14 +82,90 @@ namespace Encoder {
 		}
 
 		case DBUS_TYPE_INT16:
-		case DBUS_TYPE_INT32:
+		{
+			dbus_int16_t data = value->IntegerValue();
+			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
 		case DBUS_TYPE_INT64:
+		{
+			dbus_int64_t data = value->IntegerValue();
+			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
 		case DBUS_TYPE_UINT16:
-		case DBUS_TYPE_UINT32:
+		{
+			dbus_uint16_t data = value->IntegerValue();
+			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+		
 		case DBUS_TYPE_UINT64:
-		case DBUS_TYPE_BYTE:
 		{
 			dbus_uint64_t data = value->IntegerValue();
+			// printf("value: %lu\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
+		case DBUS_TYPE_BYTE:
+		{
+			unsigned char data = value->IntegerValue();
+			// printf("DBUS_TYPE_BYTE: ");
+			// printf("value: %u\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
+		case DBUS_TYPE_UINT32:
+		{
+			dbus_uint32_t data = value->Uint32Value();
+			// printf("DBUS_TYPE_UINT32: ");
+			// printf("value: %u\n",data);
+
+			if (!dbus_message_iter_append_basic(iter, type, &data)) {
+				printf("Failed to encode numeric value\n");
+				return false;
+			}
+
+			break;
+		}
+
+		case DBUS_TYPE_INT32:
+		{
+			dbus_int32_t data = value->Int32Value();
+			// printf("DBUS_TYPE_INT32: ");
+			// printf("value: %u\n",data);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
 				printf("Failed to encode numeric value\n");
@@ -82,6 +180,7 @@ namespace Encoder {
 		case DBUS_TYPE_SIGNATURE:
 		{
 			char *data = strdup(*String::Utf8Value(value->ToString()));
+			// printf("value: %s\n",data);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
 				dbus_free(data);
@@ -97,6 +196,7 @@ namespace Encoder {
 		case DBUS_TYPE_DOUBLE:
 		{
 			double data = value->NumberValue();
+			// printf("value: %f\n",data);
 
 			if (!dbus_message_iter_append_basic(iter, type, &data)) {
 				printf("Failed to encode double value\n");
@@ -162,6 +262,7 @@ namespace Encoder {
 
 					// Append the key
 					char *prop_key_str = strdup(*String::Utf8Value(prop_key->ToString()));
+					// printf("key: %s\n", prop_key_str);
 					dbus_message_iter_append_basic(&dict_iter, DBUS_TYPE_STRING, &prop_key_str);
 					dbus_free(prop_key_str);
 
@@ -226,6 +327,7 @@ namespace Encoder {
 		}
 		case DBUS_TYPE_STRUCT:
 		{
+			// printf("struct\n");
 			DBusMessageIter subIter;
 			DBusSignatureIter structSiter;
 			
@@ -266,6 +368,11 @@ namespace Encoder {
 
 			break;
 		}
+		default:
+		{
+			printf("Type not implemented: %i\n", type);
+		}
+		break;
 
 		}
 

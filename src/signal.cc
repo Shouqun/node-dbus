@@ -43,7 +43,7 @@ namespace Signal {
 
 		if (!args[0]->IsObject()) {
 			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a object")
+				String::New("first argument must be an object")
 			));
 		}
 
