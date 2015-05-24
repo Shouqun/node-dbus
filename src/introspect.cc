@@ -3,6 +3,7 @@
 #include <cstring>
 #include <expat.h>
 #include <dbus/dbus.h>
+#include <nan.h>
 
 #include "introspect.h"
 
@@ -29,76 +30,75 @@ namespace Introspect {
 
 	static void StartElementHandler(void *user_data, const XML_Char *name, const XML_Char **attrs)
 	{
-		HandleScope scope;
+		NanScope();
 		IntrospectObject *introspect_obj = static_cast<IntrospectObject *>(user_data);
 
 		if (strcmp(name, "node") == 0) {
 
 			if (introspect_obj->current_class == INTROSPECT_NONE) {
-				introspect_obj->obj = Persistent<Object>::New(Object::New());
+				NanAssignPersistent(introspect_obj->obj, NanNew<Object>());
 				introspect_obj->current_class = INTROSPECT_ROOT;
 			}
 		
 		} else if (strcmp(name, "interface") == 0) {
 
-			Handle<Object> obj = introspect_obj->obj;
+			Local<Object> obj = NanNew(introspect_obj->obj);
 
 			// Create a new object for interface
-			Handle<Object> interface = Object::New();
-			interface->Set(String::NewSymbol("method"), Object::New());
-			interface->Set(String::NewSymbol("property"), Object::New());
-			interface->Set(String::NewSymbol("signal"), Object::New());
+			Local<Object> interface = NanNew<Object>();
+			interface->Set(NanNew("method"), NanNew<Object>());
+			interface->Set(NanNew("property"), NanNew<Object>());
+			interface->Set(NanNew("signal"), NanNew<Object>());
 
-			obj->Set(String::New(GetAttribute(attrs, "name")), interface);
+			obj->Set(NanNew<String>(GetAttribute(attrs, "name")), interface);
 
-			introspect_obj->current_interface.Dispose();
-			introspect_obj->current_interface.Clear();
-			introspect_obj->current_interface = Persistent<Object>::New(interface);
+			NanDisposePersistent(introspect_obj->current_interface);
+			NanAssignPersistent(introspect_obj->current_interface, interface);
 
 		} else if (strcmp(name, "method") == 0) {
 
-			Handle<Object> interface = introspect_obj->current_interface;
-			Handle<Object> method_class = Handle<Object>::Cast(interface->Get(String::NewSymbol("method")));
+			Local<Object> interface = NanNew(introspect_obj->current_interface);
+			Local<Object> method_class = Local<Object>::Cast(interface->Get(NanNew("method")));
 
 			// Create a new object for this method
-			Handle<Object> method = Object::New();
-			method->Set(String::NewSymbol("in"), Array::New());
+			Local<Object> method = NanNew<Object>();
+			method->Set(NanNew("in"), NanNew<Array>());
 
-			method_class->Set(String::New(GetAttribute(attrs, "name")), method);
+			method_class->Set(NanNew<String>(GetAttribute(attrs, "name")), method);
 
 			introspect_obj->current_class = INTROSPECT_METHOD;
-			introspect_obj->current_method.Dispose();
-			introspect_obj->current_method.Clear();
-			introspect_obj->current_method = Persistent<Object>::New(method);
+
+			NanDisposePersistent(introspect_obj->current_method);
+			NanAssignPersistent(introspect_obj->current_method, method);
 
 		} else if (strcmp(name, "property") == 0) {
 
-			Handle<Object> interface = introspect_obj->current_interface;
-			Handle<Object> property_class = Handle<Object>::Cast(interface->Get(String::NewSymbol("property")));
+			Local<Object> interface = NanNew(introspect_obj->current_interface);
+			Local<Object> property_class = Local<Object>::Cast(interface->Get(NanNew("property")));
 
 			// Create a new object for this property
-			Handle<Object> method = Object::New();
-			method->Set(String::NewSymbol("type"), String::New(GetAttribute(attrs, "type")));
-			method->Set(String::NewSymbol("access"), String::New(GetAttribute(attrs, "access")));
+			Local<Object> method = NanNew<Object>();
+			method->Set(NanNew("type"), NanNew<String>(GetAttribute(attrs, "type")));
+			method->Set(NanNew("access"), NanNew<String>(GetAttribute(attrs, "access")));
 
-			property_class->Set(String::New(GetAttribute(attrs, "name")), method);
+			property_class->Set(NanNew<String>(GetAttribute(attrs, "name")), method);
 
 			introspect_obj->current_class = INTROSPECT_PROPERTY;
 
 		} else if (strcmp(name, "signal") == 0) {
 
-			Handle<Object> interface = introspect_obj->current_interface;
-			Handle<Object> signal_class = Handle<Object>::Cast(interface->Get(String::NewSymbol("signal")));
+			Local<Object> interface = NanNew(introspect_obj->current_interface);
+			Local<Object> signal_class = Local<Object>::Cast(interface->Get(NanNew("signal")));
 
 			// Create a new object for this signal
-			Handle<Array> signal = Array::New();
+			Local<Array> signal = NanNew<Array>();
 
-			signal_class->Set(String::New(GetAttribute(attrs, "name")), signal);
+			signal_class->Set(NanNew<String>(GetAttribute(attrs, "name")), signal);
 
 			introspect_obj->current_class = INTROSPECT_SIGNAL;
-			introspect_obj->current_signal.Dispose();
-			introspect_obj->current_signal.Clear();
-			introspect_obj->current_signal = Persistent<Array>::New(signal);
+
+			NanDisposePersistent(introspect_obj->current_signal);
+			NanAssignPersistent(introspect_obj->current_signal, signal);
 
 		} else if (strcmp(name, "arg") == 0) {
 
@@ -107,13 +107,13 @@ namespace Introspect {
 			{
 
 				// Argument for method
-				Handle<Object> method = introspect_obj->current_method;
+				Local<Object> method = NanNew(introspect_obj->current_method);
 
 				if (strcmp(GetAttribute(attrs, "direction"), "in") == 0) {
-					Handle<Array> arguments = Handle<Array>::Cast(method->Get(String::NewSymbol("in")));
-					arguments->Set(arguments->Length(), String::New(GetAttribute(attrs, "type")));
+					Local<Array> arguments = Local<Array>::Cast(method->Get(NanNew("in")));
+					arguments->Set(arguments->Length(), NanNew<String>(GetAttribute(attrs, "type")));
 				} else {
-					method->Set(String::NewSymbol("out"), String::New(GetAttribute(attrs, "type")));
+					method->Set(NanNew("out"), NanNew<String>(GetAttribute(attrs, "type")));
 				}
 
 				break;
@@ -126,9 +126,9 @@ namespace Introspect {
 			case INTROSPECT_SIGNAL:
 			{
 				// Argument for signal
-				Handle<Array> signal = introspect_obj->current_signal;
+				Local<Array> signal = NanNew(introspect_obj->current_signal);
 
-				signal->Set(signal->Length(), String::New(GetAttribute(attrs, "type")));
+				signal->Set(signal->Length(), NanNew<String>(GetAttribute(attrs, "type")));
 
 				break;
 			}
@@ -141,9 +141,9 @@ namespace Introspect {
 		}
 	}
 
-	Handle<Value> CreateObject(const char *source)
+	Local<Value> CreateObject(const char *source)
 	{
-		HandleScope scope;
+		NanEscapableScope();
 		IntrospectObject *introspect_obj = new IntrospectObject;
 		introspect_obj->current_class = INTROSPECT_NONE;
 
@@ -154,35 +154,27 @@ namespace Introspect {
 
 		// Start to parse source
 		if (!XML_Parse(parser, source, strlen(source), true)) {
-			introspect_obj->obj.Dispose();
-			introspect_obj->obj.Clear();
-			introspect_obj->current_interface.Dispose();
-			introspect_obj->current_interface.Clear();
-			introspect_obj->current_method.Dispose();
-			introspect_obj->current_method.Clear();
-			introspect_obj->current_signal.Dispose();
-			introspect_obj->current_signal.Clear();
+			NanDisposePersistent(introspect_obj->obj);
+			NanDisposePersistent(introspect_obj->current_interface);
+			NanDisposePersistent(introspect_obj->current_method);
+			NanDisposePersistent(introspect_obj->current_signal);
 			delete introspect_obj;
 
-			return Null();
+			return NanNull();
 		}
 
 		XML_ParserFree(parser);
 
-		Handle<Object> obj = scope.Close(introspect_obj->obj);
+		Local<Object> obj = NanNew(introspect_obj->obj);
 
 		// Clear
-		introspect_obj->obj.Dispose();
-		introspect_obj->obj.Clear();
-		introspect_obj->current_interface.Dispose();
-		introspect_obj->current_interface.Clear();
-		introspect_obj->current_method.Dispose();
-		introspect_obj->current_method.Clear();
-		introspect_obj->current_signal.Dispose();
-		introspect_obj->current_signal.Clear();
+		NanDisposePersistent(introspect_obj->obj);
+		NanDisposePersistent(introspect_obj->current_interface);
+		NanDisposePersistent(introspect_obj->current_method);
+		NanDisposePersistent(introspect_obj->current_signal);
 		delete introspect_obj;
 
-		return obj;
+		return NanEscapeScope(obj);
 	}
 
 }

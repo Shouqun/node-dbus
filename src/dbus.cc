@@ -33,8 +33,6 @@ namespace NodeDBus {
 		dbus_pending_call_unref(pending);
 
 		// Get current context from V8
-		//Local<Context> context = Context::GetCurrent();
-		//Context::Scope ctxScope(context);
 		NanScope();
 
 		Handle<Value> err = NanNull();
@@ -57,7 +55,6 @@ namespace NodeDBus {
 
 		// Invoke
 		data->callback->Call(2, args);
-		//MakeCallback(data->callback, data->callback, 2, args);
 	}
 
 	static void method_free(void *user_data)
@@ -99,10 +96,6 @@ namespace NodeDBus {
 		// Initializing connection object
 		Local<ObjectTemplate> object_template = NanNew<ObjectTemplate>();
 		object_template->SetInternalFieldCount(1);
-		Local<Object> obj_instance = object_template->NewInstance();
-
-		Persistent<Object> object_instance;
-		NanAssignPersistent(object_instance, obj_instance);
 
 		// Create bus object
 		BusObject *bus = new BusObject;
@@ -111,7 +104,7 @@ namespace NodeDBus {
 
 		// Create a JavaScript object to store bus object
 		Local<Object> bus_object = object_template->NewInstance();
-		bus_object->SetInternalField(0, NanNew<External>(bus));
+		NanSetInternalFieldPointer(bus_object, 0, bus);
 		bus_object->Set(NanNew("uniqueName"), NanNew<String>(dbus_bus_get_unique_name(connection)));
 
 		// Initializing connection handler
@@ -158,10 +151,10 @@ namespace NodeDBus {
 		if (!args[1]->IsString() || !args[2]->IsString() || !args[3]->IsString() || !args[4]->IsString())
 			return NanThrowError("Require service name, object path, interface and method");
 
-		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
-		char *object_path = strdup(*String::Utf8Value(args[2]->ToString()));
-		char *interface_name = strdup(*String::Utf8Value(args[3]->ToString()));
-		char *method = strdup(*String::Utf8Value(args[4]->ToString()));
+		char *service_name = strdup(*NanUtf8String(args[1]));
+		char *object_path = strdup(*NanUtf8String(args[2]));
+		char *interface_name = strdup(*NanUtf8String(args[3]));
+		char *method = strdup(*NanUtf8String(args[4]));
 
 		DBusMessage *message = dbus_message_new_method_call(service_name, object_path, interface_name, method);
 
@@ -230,8 +223,6 @@ namespace NodeDBus {
 			DBusAsyncData *data = new DBusAsyncData;
 			data->pending = pending;
 			data->callback = new NanCallback(args[8].As<Function>());
-//			Handle<Function> callback = Handle<Function>::Cast(args[8]);
-//			data->callback = Persistent<Function>::New(callback);
 			if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
 				if (message != NULL)
 					dbus_message_unref(message);
@@ -328,9 +319,6 @@ namespace NodeDBus {
 	}
 
 	static void init(Handle<Object> exports) {
-		exports->Set(NanNew<String>("getBus"), NanNew<FunctionTemplate>(GetBus)->GetFunction());
-		exports->Set(NanNew<String>("releaseBus"), NanNew<FunctionTemplate>(ReleaseBus)->GetFunction());
-/*
 		NODE_SET_METHOD(exports, "getBus", GetBus);
 		NODE_SET_METHOD(exports, "releaseBus", ReleaseBus);
 		NODE_SET_METHOD(exports, "callMethod", CallMethod);
@@ -344,7 +332,7 @@ namespace NodeDBus {
 		NODE_SET_METHOD(exports, "addSignalFilter", AddSignalFilter);
 		NODE_SET_METHOD(exports, "setMaxMessageSize", SetMaxMessageSize);
 		NODE_SET_METHOD(exports, "emitSignal", Signal::EmitSignal);
-*/
+
 	}
 
 	NODE_MODULE(dbus, init);
