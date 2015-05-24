@@ -23,7 +23,7 @@ namespace Introspect {
 		IntrospectClass current_class;
 	} IntrospectObject;
 
-	Handle<Value> CreateObject(const char *source);
+	Local<Value> CreateObject(const char *source);
 }
 
 #endif

@@ -3,6 +3,7 @@
 
 #include <v8.h>
 #include <string>
+#include <nan.h>
 
 namespace NodeDBus {
 
@@ -16,8 +17,13 @@ namespace NodeDBus {
 	static_cast<v8::PropertyAttribute>(v8::ReadOnly|v8::DontDelete))
 
 	typedef struct DBusAsyncData {
-		Persistent<Function> callback;
+//		Persistent<Function> callback;
+		NanCallback *callback;
 		DBusPendingCall *pending;
+
+		~DBusAsyncData() {
+			delete callback;
+		}
 	} DBusAsyncData;
 
 	typedef enum {

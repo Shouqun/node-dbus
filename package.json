@@ -1,20 +1,23 @@
 {
-  "name" : "dbus",
-  "version" : "0.2.10",
+  "name": "dbus",
+  "version": "0.2.11",
   "description": "A D-Bus binding for Node",
-  "author" : "Shouqun Liu <liushouqun@gmail.com>",
+  "author": "Shouqun Liu <liushouqun@gmail.com>",
   "contributors": [
     "Fred Chien <cfsghost@gmail.com>"
   ],
-  "repository" : {
-    "type" : "git",
-    "url" : "git://github.com/Shouqun/node-dbus.git"
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Shouqun/node-dbus.git"
   },
   "engines": {
     "node": ">= 0.8.0"
   },
-  "main" : "./lib/dbus",
-  "scripts" : {
-    "install" : "node-gyp configure build"
+  "main": "./lib/dbus",
+  "scripts": {
+    "install": "node-gyp configure build"
+  },
+  "dependencies": {
+    "nan": "^1.8.4"
   }
 }

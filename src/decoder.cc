@@ -2,6 +2,7 @@
 #include <node.h>
 #include <string>
 #include <dbus/dbus.h>
+#include <nan.h>
 
 #include "decoder.h"
 
@@ -13,7 +14,7 @@ namespace Decoder {
 
 	Handle<Value> DecodeMessageIter(DBusMessageIter *iter, const char *signature)
 	{
-		HandleScope scope;
+		NanEscapableScope();
 		DBusSignatureIter siter;
 		int cur_type = dbus_message_iter_get_arg_type(iter);
 
@@ -29,7 +30,7 @@ namespace Decoder {
 		{
 			dbus_bool_t value = false;
 			dbus_message_iter_get_basic(iter, &value);
-			return scope.Close(Boolean::New(value));
+			return NanEscapeScope(NanNew<Boolean>(value));
 		}
 
 		case DBUS_TYPE_BYTE:
@@ -42,14 +43,14 @@ namespace Decoder {
 		{
 			dbus_uint64_t value = 0;
 			dbus_message_iter_get_basic(iter, &value);
-			return scope.Close(Number::New(value));
+			return NanEscapeScope(NanNew<Number>(value));
 		}
 
 		case DBUS_TYPE_DOUBLE: 
 		{
 			double value = 0;
 			dbus_message_iter_get_basic(iter, &value);
-			return scope.Close(Number::New(value));
+			return NanEscapeScope(NanNew<Number>(value));
 		}
 
 		case DBUS_TYPE_OBJECT_PATH:
@@ -58,7 +59,7 @@ namespace Decoder {
 		{
 			const char *value;
 			dbus_message_iter_get_basic(iter, &value); 
-			return scope.Close(String::New(value));
+			return NanEscapeScope(NanNew<String>(value));
 		}
 
 		case DBUS_TYPE_STRUCT:
@@ -66,7 +67,7 @@ namespace Decoder {
 			char *sig = NULL;
 
 			// Create a object
-			Handle<Object> result = Object::New();
+			Handle<Object> result = NanNew<Object>();
 
 			do {
 				// Getting sub iterator
@@ -88,7 +89,7 @@ namespace Decoder {
 					value = DecodeMessageIter(&dict_entry_iter, sig);
 					dbus_free(sig);
 				} else {
-					value = Undefined();
+					value = NanUndefined();
 				}
 
 				// Append a property
@@ -96,7 +97,7 @@ namespace Decoder {
 
 			} while(dbus_message_iter_next(iter));
 
-			return scope.Close(result);
+			return NanEscapeScope(result);
 		}
 
 		case DBUS_TYPE_ARRAY:
@@ -124,11 +125,11 @@ namespace Decoder {
 			if (is_dict) {
 
 				// Create a object
-				Handle<Object> result = Object::New();
+				Handle<Object> result = NanNew<Object>();
 
 				// Make sure it doesn't empty
 				if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_INVALID)
-					return scope.Close(result);
+					return NanEscapeScope(result);
 
 				do {
 					// Getting sub iterator
@@ -150,7 +151,7 @@ namespace Decoder {
 						value = DecodeMessageIter(&dict_entry_iter, sig);
 						dbus_free(sig);
 					} else {
-						value = Undefined();
+						value = NanUndefined();
 					}
 
 					// Append a property
@@ -158,14 +159,14 @@ namespace Decoder {
 
 				} while(dbus_message_iter_next(&internal_iter));
 
-				return scope.Close(result);
+				return NanEscapeScope(result);
 			}
 
 			// Create an array
 			unsigned int count = 0;
-			Handle<Array> result = Array::New();
+			Handle<Array> result = NanNew<Array>();
 			if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_INVALID)
-				return scope.Close(result);
+				return NanEscapeScope(result);
 
 			do {
 
@@ -182,7 +183,7 @@ namespace Decoder {
 				count++;
 			} while(dbus_message_iter_next(&internal_iter));
 
-			return scope.Close(result);
+			return NanEscapeScope(result);
 		}
 
 		case DBUS_TYPE_VARIANT:
@@ -195,32 +196,32 @@ namespace Decoder {
 			Handle<Value> value = DecodeMessageIter(&internal_iter, sig);
 			dbus_free(sig);
 
-			return scope.Close(value);
+			return NanEscapeScope(value);
 		}
 
 		default:
-			return Undefined();
+			return NanUndefined();
 
 		}
 
-		return Undefined();
+		return NanUndefined();
 	}
 
 	Handle<Value> DecodeMessage(DBusMessage *message)
 	{
-		HandleScope scope;
+		NanEscapableScope();
 		DBusMessageIter iter;
 
 		if (!dbus_message_iter_init(message, &iter))
-			return Undefined();
+			return NanUndefined();
 
 		if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR)
-			return Undefined();
+			return NanUndefined();
 
 		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID)
-			return Undefined();
+			return NanUndefined();
 
-		Handle<Array> result = Array::New();
+		Handle<Array> result = NanNew<Array>();
 		unsigned int count = 0;
 		char *signature = NULL;
 		Handle<Value> value;
@@ -238,27 +239,27 @@ namespace Decoder {
 		} while(dbus_message_iter_next(&iter));
 
 		if (count == 1) {
-			return scope.Close(value);
+			return NanEscapeScope(value);
 		}
 
-		return scope.Close(result);
+		return NanEscapeScope(result);
 	}
 
 	Handle<Value> DecodeArguments(DBusMessage *message)
 	{
-		HandleScope scope;
+		NanEscapableScope();
 		DBusMessageIter iter;
-		Handle<Array> result = Array::New();
+		Handle<Array> result = NanNew<Array>();
 
 		if (!dbus_message_iter_init(message, &iter))
-			return scope.Close(result);
+			return NanEscapeScope(result);
 
 		if (dbus_message_get_type(message) == DBUS_MESSAGE_TYPE_ERROR)
-			return scope.Close(result);
+			return NanEscapeScope(result);
 
 		// No argument
 		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID)
-			return scope.Close(result);
+			return NanEscapeScope(result);
 
 		unsigned int count = 0;
 		char *signature = NULL;
@@ -275,7 +276,7 @@ namespace Decoder {
 			count++;
 		} while(dbus_message_iter_next(&iter));
 
-		return scope.Close(result);
+		return NanEscapeScope(result);
 	}
 }
 

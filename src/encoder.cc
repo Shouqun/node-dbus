@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <dbus/dbus.h>
 #include <iostream>
+#include <nan.h>
 
 #include "encoder.h"
 
@@ -54,7 +55,7 @@ namespace Encoder {
 	{
 		// printf("EncodeObject %s\n",signature);
 		// printf("%p", value);
-		HandleScope scope;
+		NanScope();
 		DBusSignatureIter siter;
 		int type;
 

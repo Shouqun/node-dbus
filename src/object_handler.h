@@ -7,10 +7,10 @@ namespace ObjectHandler {
 	using namespace v8;
 	using namespace std;
 
-	Handle<Value> RegisterObjectPath(Arguments const &args);
-	Handle<Value> SendMessageReply(Arguments const &args);
-	Handle<Value> SendErrorMessageReply(Arguments const &args);
-	Handle<Value> SetObjectHandler(const Arguments& args);
+	NAN_METHOD(RegisterObjectPath);
+	NAN_METHOD(SendMessageReply);
+	NAN_METHOD(SendErrorMessageReply);
+	NAN_METHOD(SetObjectHandler);
 }
 
 #endif

@@ -11,6 +11,9 @@
 				'src/introspect.cc',
 				'src/object_handler.cc'
 			],
+			'include_dirs': [
+				"<!(node -e \"require('nan')\")"
+			],
 			'conditions': [
 				['OS=="linux"', {
 					'defines': [

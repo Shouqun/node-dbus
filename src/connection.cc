@@ -5,6 +5,7 @@
 #include <cstring>
 #include <stdlib.h>
 #include <dbus/dbus.h>
+#include <nan.h>
 
 #include "dbus.h"
 #include "decoder.h"
@@ -108,7 +109,11 @@ namespace Connection {
 			watch_remove(watch, data);
 	}
 
+#if UV_VERSION_MAJOR == 0
 	static void timer_handle(uv_timer_t *timer, int status)
+#else
+	static void timer_handle(uv_timer_t *timer)
+#endif
 	{
 		DBusTimeout *timeout = static_cast<DBusTimeout *>(timer->data);
 		dbus_timeout_handle(timeout);
@@ -159,7 +164,11 @@ namespace Connection {
 			timeout_remove(timeout, data);
 	}
 
+#if UV_VERSION_MAJOR == 0
 	static void connection_loop_handle(uv_async_t *connection_loop, int status)
+#else
+	static void connection_loop_handle(uv_async_t *connection_loop)
+#endif
 	{
 		DBusConnection *connection = static_cast<DBusConnection *>(connection_loop->data);
 		dbus_connection_read_write(connection, 0);
@@ -201,22 +210,25 @@ namespace Connection {
 		}
 
 		// Getting V8 context
+/*
 		Local<Context> context = Context::GetCurrent();
 		Context::Scope ctxScope(context); 
 		HandleScope scope;
+*/
+		NanScope();
 
 		// Getting arguments of signal
-		Handle<Value> arguments = Decoder::DecodeArguments(message);
-		Handle<Value> senderValue = Null();
+		Local<Value> arguments = Decoder::DecodeArguments(message);
+		Local<Value> senderValue = NanNull();
 		if (sender)
-			senderValue = String::New(sender);
+			senderValue = NanNew<String>(sender);
 
-		Handle<Value> args[] = {
-			String::New(dbus_bus_get_unique_name(connection)),
+		Local<Value> args[] = {
+			NanNew<String>(dbus_bus_get_unique_name(connection)),
 			senderValue,
-			String::New(object_path),
-			String::New(interface),
-			String::New(signal_name),
+			NanNew<String>(object_path),
+			NanNew<String>(interface),
+			NanNew<String>(signal_name),
 			arguments
 		};
 

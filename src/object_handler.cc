@@ -2,6 +2,7 @@
 #include <node.h>
 #include <cstring>
 #include <dbus/dbus.h>
+#include <nan.h>
 
 #include "dbus.h"
 #include "decoder.h"
@@ -19,10 +20,7 @@ namespace ObjectHandler {
 	// Initializing object handler table
 	static DBusHandlerResult MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data)
 	{
-		// Getting V8 context
-		Local<Context> context = Context::GetCurrent();
-		Context::Scope ctxScope(context); 
-		HandleScope scope;
+		NanScope();
 
 		const char *sender = dbus_message_get_sender(message);
 		const char *object_path = dbus_message_get_path(message);
@@ -30,24 +28,23 @@ namespace ObjectHandler {
 		const char *member = dbus_message_get_member(message);
 
 		// Create a object template
-		Handle<ObjectTemplate> object_template = ObjectTemplate::New();
+		Local<ObjectTemplate> object_template = NanNew<ObjectTemplate>();
 		object_template->SetInternalFieldCount(2);
-		Persistent<ObjectTemplate> object_instance = Persistent<ObjectTemplate>::New(object_template);
 
 		// Store connection and message
-		Handle<Object> message_object = object_instance->NewInstance();
-		message_object->SetInternalField(0, External::New(connection));
-		message_object->SetInternalField(1, External::New(message));
+		Local<Object> message_object = object_template->NewInstance();
+		NanSetInternalFieldPointer(message_object, 0, connection);
+		NanSetInternalFieldPointer(message_object, 1, message);
 
 		// Getting arguments
-		Handle<Value> arguments = Decoder::DecodeArguments(message);
+		Local<Value> arguments = Decoder::DecodeArguments(message);
 
-		Handle<Value> args[] = {
-			String::New(dbus_bus_get_unique_name(connection)),
-			String::New(sender),
-			String::New(object_path),
-			String::New(interface),
-			String::New(member),
+		Local<Value> args[] = {
+			NanNew<String>(dbus_bus_get_unique_name(connection)),
+			NanNew<String>(sender),
+			NanNew<String>(object_path),
+			NanNew<String>(interface),
+			NanNew<String>(member),
 			message_object,
 			arguments
 		};
@@ -57,7 +54,7 @@ namespace ObjectHandler {
 			dbus_message_ref(message);
 
 		// Invoke
-		MakeCallback(handler, handler, 7, args);
+		NanMakeCallback(NanGetCurrentContext()->Global(), NanNew(handler), 7, args);
 
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}
@@ -78,7 +75,7 @@ namespace ObjectHandler {
 
 	static void _SendMessageReply(DBusConnection *connection, DBusMessage *message, Local<Value> reply_value, char *signature)
 	{
-		HandleScope scope;
+		NanScope();
 		DBusMessageIter iter;
 		DBusMessage *reply;
 		dbus_uint32_t serial = 0;
@@ -99,26 +96,21 @@ namespace ObjectHandler {
 
 	DBusObjectPathVTable vtable = CreateVTable();
 
-	Handle<Value> RegisterObjectPath(Arguments const &args)
-	{
-		HandleScope scope;
+	NAN_METHOD(RegisterObjectPath) {
+		NanScope();
 
 		if (!args[0]->IsObject()) {
-			return ThrowException(Exception::TypeError(
-				String::New("first argument must be an object (bus)")
-			));
+			return NanThrowTypeError("First parameter must be an object (bus)");
 		}
 
 		if (!args[1]->IsString()) {
-			return ThrowException(Exception::TypeError(
-				String::New("second argument must be a string (object path)")
-			));
+			return NanThrowTypeError("Second parameter must be a string (object path)");
 		}
 
-		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
+		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
 
 		// Register object path
-		char *object_path = strdup(*String::Utf8Value(args[1]->ToString()));
+		char *object_path = strdup(*NanUtf8String(args[1]));
 		dbus_bool_t ret = dbus_connection_register_object_path(bus->connection,
 			object_path,
 			&vtable,
@@ -126,53 +118,47 @@ namespace ObjectHandler {
 		dbus_connection_flush(bus->connection);
 		dbus_free(object_path);
 		if (!ret) {
-			return ThrowException(Exception::Error(
-				String::New("Out of Memory")
-			));
+			return NanThrowError("Out of Memory");
 		}
 
-		return Undefined();
+		NanReturnUndefined();
 	}
 
-	Handle<Value> SendMessageReply(Arguments const &args)
-	{
-		HandleScope scope;
+	NAN_METHOD(SendMessageReply) {
+		NanScope();
 
 		if (!args[0]->IsObject()) {
-			return ThrowException(Exception::TypeError(
-				String::New("first argument must be an object")
-			));
+			return NanThrowTypeError("First parameter must be an object");
 		}
 
-		DBusConnection *connection = static_cast<DBusConnection *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
-		DBusMessage *message = static_cast<DBusMessage *>(External::Unwrap(args[0]->ToObject()->GetInternalField(1)));
+		DBusConnection *connection = static_cast<DBusConnection *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
+		DBusMessage *message = static_cast<DBusMessage *>(NanGetInternalFieldPointer(args[0]->ToObject(), 1));
 
-		if (dbus_message_get_no_reply(message))
-			return Undefined();
+		if (dbus_message_get_no_reply(message)) {
+			NanReturnUndefined();
+			return;
+		}
 
-		char *signature = strdup(*String::Utf8Value(args[2]->ToString()));
+		char *signature = strdup(*NanUtf8String(args[2]));
 		_SendMessageReply(connection, message, args[1], signature);
 		dbus_free(signature);
 
-		return Undefined();
+		NanReturnUndefined();
 	}
 
-	Handle<Value> SendErrorMessageReply(Arguments const &args)
-	{
-		HandleScope scope;
+	NAN_METHOD(SendErrorMessageReply) {
+		NanScope();
 
 		if (!args[0]->IsObject()) {
-			return ThrowException(Exception::TypeError(
-				String::New("first argument must be an object")
-			));
+			return NanThrowTypeError("First parameter must be an object");
 		}
 
-		DBusConnection *connection = static_cast<DBusConnection *>(External::Unwrap(args[0]->ToObject()->GetInternalField(0)));
-		DBusMessage *message = static_cast<DBusMessage *>(External::Unwrap(args[0]->ToObject()->GetInternalField(1)));
+		DBusConnection *connection = static_cast<DBusConnection *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
+		DBusMessage *message = static_cast<DBusMessage *>(NanGetInternalFieldPointer(args[0]->ToObject(), 1));
 
 		// Getting error message from arguments
-		char *name = strdup(*String::Utf8Value(args[1]->ToString()));
-		char *msg = strdup(*String::Utf8Value(args[2]->ToString()));
+		char *name = strdup(*NanUtf8String(args[1]));
+		char *msg = strdup(*NanUtf8String(args[2]));
 
 		// Initializing error message
 		DBusMessage *error_message = dbus_message_new_error(message, name, msg);
@@ -186,25 +172,20 @@ namespace ObjectHandler {
 		dbus_free(name);
 		dbus_free(msg);
 
-		return Undefined();
+		NanReturnUndefined();
 	}
 
-	Handle<Value> SetObjectHandler(const Arguments& args)
-	{
-		HandleScope scope;
+	NAN_METHOD(SetObjectHandler) {
+		NanScope();
 
 		if (!args[0]->IsFunction()) {
-			return ThrowException(Exception::TypeError(
-				String::New("first argument must be a function")
-			));
+			return NanThrowTypeError("First parameter must be a function");
 		}
 
-		handler.Dispose();
-		handler.Clear();
+		NanDisposePersistent(handler);
+		NanAssignPersistent(handler, args[0].As<Function>());
 
-		handler = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
-
-		return Undefined();
+		NanReturnUndefined();
 	}
 }
 

@@ -8,8 +8,8 @@ namespace Signal {
 	using namespace std;
 
 	void DispatchSignal(Handle<Value> args[]);
-	Handle<Value> EmitSignal(const Arguments& args);
-	Handle<Value> SetSignalHandler(const Arguments& args);
+	NAN_METHOD(EmitSignal);
+	NAN_METHOD(SetSignalHandler);
 }
 
 #endif
