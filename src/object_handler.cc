@@ -136,7 +136,6 @@ namespace ObjectHandler {
 
 		if (dbus_message_get_no_reply(message)) {
 			NanReturnUndefined();
-			return;
 		}
 
 		char *signature = strdup(*NanUtf8String(args[2]));

@@ -267,7 +267,6 @@ namespace NodeDBus {
 
 		if (!args[0]->IsString()) {
 			NanReturnNull();
-			return;
 		}
 
 		char *src = strdup(*String::Utf8Value(args[0]->ToString()));
