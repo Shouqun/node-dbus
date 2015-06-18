@@ -44,8 +44,8 @@ namespace NodeDBus {
 		}
 
 		// Decode message for arguments
-		Local<Value> result = Decoder::DecodeMessage(reply_message);
-		Local<Value> args[] = {
+		Handle<Value> result = Decoder::DecodeMessage(reply_message);
+		Handle<Value> args[] = {
 			err,
 			result
 		};

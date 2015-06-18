@@ -218,12 +218,12 @@ namespace Connection {
 		NanScope();
 
 		// Getting arguments of signal
-		Local<Value> arguments = Decoder::DecodeArguments(message);
+		Handle<Value> arguments = Decoder::DecodeArguments(message);
 		Local<Value> senderValue = NanNull();
 		if (sender)
 			senderValue = NanNew<String>(sender);
 
-		Local<Value> args[] = {
+		Handle<Value> args[] = {
 			NanNew<String>(dbus_bus_get_unique_name(connection)),
 			senderValue,
 			NanNew<String>(object_path),
