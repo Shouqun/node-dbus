@@ -31,7 +31,7 @@ namespace Encoder {
 			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
 		} else if (IsByte(value)) {
 			return const_cast<char*>(DBUS_TYPE_BYTE_AS_STRING);
-		} else if (value->IsNumber()) {
+		} else if (value->IsUint32()) {
 			return const_cast<char*>(DBUS_TYPE_UINT32_AS_STRING);
 		} else if (value->IsInt32()) {
 			return const_cast<char*>(DBUS_TYPE_INT32_AS_STRING);
