@@ -37,9 +37,9 @@ namespace ObjectHandler {
 		NanSetInternalFieldPointer(message_object, 1, message);
 
 		// Getting arguments
-		Local<Value> arguments = Decoder::DecodeArguments(message);
+		Handle<Value> arguments = Decoder::DecodeArguments(message);
 
-		Local<Value> args[] = {
+		Handle<Value> args[] = {
 			NanNew<String>(dbus_bus_get_unique_name(connection)),
 			NanNew<String>(sender),
 			NanNew<String>(object_path),
@@ -136,7 +136,6 @@ namespace ObjectHandler {
 
 		if (dbus_message_get_no_reply(message)) {
 			NanReturnUndefined();
-			return;
 		}
 
 		char *signature = strdup(*NanUtf8String(args[2]));

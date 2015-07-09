@@ -44,8 +44,8 @@ namespace NodeDBus {
 		}
 
 		// Decode message for arguments
-		Local<Value> result = Decoder::DecodeMessage(reply_message);
-		Local<Value> args[] = {
+		Handle<Value> result = Decoder::DecodeMessage(reply_message);
+		Handle<Value> args[] = {
 			err,
 			result
 		};
@@ -267,7 +267,6 @@ namespace NodeDBus {
 
 		if (!args[0]->IsString()) {
 			NanReturnNull();
-			return;
 		}
 
 		char *src = strdup(*String::Utf8Value(args[0]->ToString()));

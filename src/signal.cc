@@ -15,7 +15,7 @@ namespace Signal {
 	using namespace std;
 
 	//Persistent<Function> handler = Persistent<Function>::New(Handle<Function>::Cast(NanNull()));
-	bool hookSignal = False;
+	bool hookSignal = false;
 	Persistent<Function> handler;
 
 	void DispatchSignal(Handle<Value> args[])
@@ -35,7 +35,7 @@ namespace Signal {
 //		handler.Dispose();
 //		handler.Clear();
 
-		hookSignal = True;
+		hookSignal = true;
 		NanAssignPersistent(handler, args[0].As<Function>());
 //		handler = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
 
