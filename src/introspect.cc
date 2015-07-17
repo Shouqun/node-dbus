@@ -63,6 +63,7 @@ namespace Introspect {
 			// Create a new object for this method
 			Local<Object> method = NanNew<Object>();
 			method->Set(NanNew("in"), NanNew<Array>());
+			method->Set(NanNew("out"), NanNew<Array>());
 
 			method_class->Set(NanNew<String>(GetAttribute(attrs, "name")), method);
 
@@ -113,7 +114,8 @@ namespace Introspect {
 					Local<Array> arguments = Local<Array>::Cast(method->Get(NanNew("in")));
 					arguments->Set(arguments->Length(), NanNew<String>(GetAttribute(attrs, "type")));
 				} else {
-					method->Set(NanNew("out"), NanNew<String>(GetAttribute(attrs, "type")));
+					Local<Array> arguments = Local<Array>::Cast(method->Get(NanNew("out")));
+					arguments->Set(arguments->Length(), NanNew<String>(GetAttribute(attrs, "type")));
 				}
 
 				break;
