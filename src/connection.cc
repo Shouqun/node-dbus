@@ -103,6 +103,13 @@ namespace Connection {
 
 	static void watch_handle(DBusWatch *watch, void *data)
 	{
+		// This watch was never added, so don't do anything!
+		// If we would react in this case, it can happen that we add
+		// two watches for one filehandler, this crashes libuv!
+		if (dbus_watch_get_data(watch) == NULL) {
+			return;
+		}
+
 		if (dbus_watch_get_enabled(watch))
 			watch_add(watch, data);
 		else
@@ -135,7 +142,7 @@ namespace Connection {
 	}
 
 	static dbus_bool_t timeout_add(DBusTimeout *timeout, void *data)
-	{ 
+	{
 		if (!dbus_timeout_get_enabled(timeout) || dbus_timeout_get_data(timeout) != NULL)
 			return true;
 
@@ -212,7 +219,7 @@ namespace Connection {
 		// Getting V8 context
 /*
 		Local<Context> context = Context::GetCurrent();
-		Context::Scope ctxScope(context); 
+		Context::Scope ctxScope(context);
 		HandleScope scope;
 */
 		NanScope();
