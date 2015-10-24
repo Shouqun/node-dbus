@@ -15,12 +15,12 @@ namespace ObjectHandler {
 	using namespace v8;
 	using namespace std;
 
-	Persistent<Function> handler;
+	Nan::Persistent<Function> handler;
 
 	// Initializing object handler table
 	static DBusHandlerResult MessageHandler(DBusConnection *connection, DBusMessage *message, void *user_data)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
 		const char *sender = dbus_message_get_sender(message);
 		const char *object_path = dbus_message_get_path(message);
@@ -28,23 +28,23 @@ namespace ObjectHandler {
 		const char *member = dbus_message_get_member(message);
 
 		// Create a object template
-		Local<ObjectTemplate> object_template = NanNew<ObjectTemplate>();
+		Local<ObjectTemplate> object_template = Nan::New<ObjectTemplate>();
 		object_template->SetInternalFieldCount(2);
 
 		// Store connection and message
 		Local<Object> message_object = object_template->NewInstance();
-		NanSetInternalFieldPointer(message_object, 0, connection);
-		NanSetInternalFieldPointer(message_object, 1, message);
+		Nan::SetInternalFieldPointer(message_object, 0, connection);
+		Nan::SetInternalFieldPointer(message_object, 1, message);
 
 		// Getting arguments
 		Handle<Value> arguments = Decoder::DecodeArguments(message);
 
-		Handle<Value> args[] = {
-			NanNew<String>(dbus_bus_get_unique_name(connection)),
-			NanNew<String>(sender),
-			NanNew<String>(object_path),
-			NanNew<String>(interface),
-			NanNew<String>(member),
+		Handle<Value> info[] = {
+			Nan::New<String>(dbus_bus_get_unique_name(connection)).ToLocalChecked(),
+			Nan::New<String>(sender).ToLocalChecked(),
+			Nan::New<String>(object_path).ToLocalChecked(),
+			Nan::New<String>(interface).ToLocalChecked(),
+			Nan::New<String>(member).ToLocalChecked(),
 			message_object,
 			arguments
 		};
@@ -54,7 +54,7 @@ namespace ObjectHandler {
 			dbus_message_ref(message);
 
 		// Invoke
-		NanMakeCallback(NanGetCurrentContext()->Global(), NanNew(handler), 7, args);
+		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), Nan::New(handler), 7, info);
 
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}
@@ -75,7 +75,7 @@ namespace ObjectHandler {
 
 	static void _SendMessageReply(DBusConnection *connection, DBusMessage *message, Local<Value> reply_value, char *signature)
 	{
-		NanScope();
+		Nan::HandleScope scope;
 		DBusMessageIter iter;
 		DBusMessage *reply;
 		dbus_uint32_t serial = 0;
@@ -97,20 +97,20 @@ namespace ObjectHandler {
 	DBusObjectPathVTable vtable = CreateVTable();
 
 	NAN_METHOD(RegisterObjectPath) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (!args[0]->IsObject()) {
-			return NanThrowTypeError("First parameter must be an object (bus)");
+		if (!info[0]->IsObject()) {
+			return Nan::ThrowTypeError("First parameter must be an object (bus)");
 		}
 
-		if (!args[1]->IsString()) {
-			return NanThrowTypeError("Second parameter must be a string (object path)");
+		if (!info[1]->IsString()) {
+			return Nan::ThrowTypeError("Second parameter must be a string (object path)");
 		}
 
-		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
+		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
 
 		// Register object path
-		char *object_path = strdup(*NanUtf8String(args[1]));
+		char *object_path = strdup(*Nan::Utf8String(info[1]));
 		dbus_bool_t ret = dbus_connection_register_object_path(bus->connection,
 			object_path,
 			&vtable,
@@ -118,46 +118,46 @@ namespace ObjectHandler {
 		dbus_connection_flush(bus->connection);
 		dbus_free(object_path);
 		if (!ret) {
-			return NanThrowError("Out of Memory");
+			return Nan::ThrowError("Out of Memory");
 		}
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(SendMessageReply) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (!args[0]->IsObject()) {
-			return NanThrowTypeError("First parameter must be an object");
+		if (!info[0]->IsObject()) {
+			return Nan::ThrowTypeError("First parameter must be an object");
 		}
 
-		DBusConnection *connection = static_cast<DBusConnection *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
-		DBusMessage *message = static_cast<DBusMessage *>(NanGetInternalFieldPointer(args[0]->ToObject(), 1));
+		DBusConnection *connection = static_cast<DBusConnection *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+		DBusMessage *message = static_cast<DBusMessage *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 1));
 
 		if (dbus_message_get_no_reply(message)) {
-			NanReturnUndefined();
+			return;
 		}
 
-		char *signature = strdup(*NanUtf8String(args[2]));
-		_SendMessageReply(connection, message, args[1], signature);
+		char *signature = strdup(*Nan::Utf8String(info[2]));
+		_SendMessageReply(connection, message, info[1], signature);
 		dbus_free(signature);
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(SendErrorMessageReply) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (!args[0]->IsObject()) {
-			return NanThrowTypeError("First parameter must be an object");
+		if (!info[0]->IsObject()) {
+			return Nan::ThrowTypeError("First parameter must be an object");
 		}
 
-		DBusConnection *connection = static_cast<DBusConnection *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
-		DBusMessage *message = static_cast<DBusMessage *>(NanGetInternalFieldPointer(args[0]->ToObject(), 1));
+		DBusConnection *connection = static_cast<DBusConnection *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+		DBusMessage *message = static_cast<DBusMessage *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 1));
 
 		// Getting error message from arguments
-		char *name = strdup(*NanUtf8String(args[1]));
-		char *msg = strdup(*NanUtf8String(args[2]));
+		char *name = strdup(*Nan::Utf8String(info[1]));
+		char *msg = strdup(*Nan::Utf8String(info[2]));
 
 		// Initializing error message
 		DBusMessage *error_message = dbus_message_new_error(message, name, msg);
@@ -171,20 +171,20 @@ namespace ObjectHandler {
 		dbus_free(name);
 		dbus_free(msg);
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(SetObjectHandler) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (!args[0]->IsFunction()) {
-			return NanThrowTypeError("First parameter must be a function");
+		if (!info[0]->IsFunction()) {
+			return Nan::ThrowTypeError("First parameter must be a function");
 		}
 
-		NanDisposePersistent(handler);
-		NanAssignPersistent(handler, args[0].As<Function>());
+		handler.Reset();
+		handler.Reset(info[0].As<Function>());
 
-		NanReturnUndefined();
+		return;
 	}
 }
 

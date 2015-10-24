@@ -222,24 +222,24 @@ namespace Connection {
 		Context::Scope ctxScope(context);
 		HandleScope scope;
 */
-		NanScope();
+		Nan::HandleScope scope;
 
 		// Getting arguments of signal
 		Handle<Value> arguments = Decoder::DecodeArguments(message);
-		Local<Value> senderValue = NanNull();
+		Local<Value> senderValue = Nan::Null();
 		if (sender)
-			senderValue = NanNew<String>(sender);
+			senderValue = Nan::New<String>(sender).ToLocalChecked();
 
-		Handle<Value> args[] = {
-			NanNew<String>(dbus_bus_get_unique_name(connection)),
+		Handle<Value> info[] = {
+			Nan::New<String>(dbus_bus_get_unique_name(connection)).ToLocalChecked(),
 			senderValue,
-			NanNew<String>(object_path),
-			NanNew<String>(interface),
-			NanNew<String>(signal_name),
+			Nan::New<String>(object_path).ToLocalChecked(),
+			Nan::New<String>(interface).ToLocalChecked(),
+			Nan::New<String>(signal_name).ToLocalChecked(),
 			arguments
 		};
 
-		Signal::DispatchSignal(args);
+		Signal::DispatchSignal(info);
 
 		return DBUS_HANDLER_RESULT_HANDLED;
 	}

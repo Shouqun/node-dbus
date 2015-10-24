@@ -55,7 +55,7 @@ namespace Encoder {
 	{
 		// printf("EncodeObject %s\n",signature);
 		// printf("%p", value);
-		NanScope();
+		Nan::HandleScope scope;
 		DBusSignatureIter siter;
 		int type;
 
