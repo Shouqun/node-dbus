@@ -33,19 +33,19 @@ namespace NodeDBus {
 		dbus_pending_call_unref(pending);
 
 		// Get current context from V8
-		NanScope();
+		Nan::HandleScope scope;
 
-		Handle<Value> err = NanNull();
+		Handle<Value> err = Nan::Null();
 		if (dbus_error_is_set(&error)) {
-			err = NanError(error.message);
+			err = Nan::Error(error.message);
 			dbus_error_free(&error);
 		} else if (dbus_message_get_type(reply_message) == DBUS_MESSAGE_TYPE_ERROR) {
-			err = NanError(dbus_message_get_error_name(reply_message));
+			err = Nan::Error(dbus_message_get_error_name(reply_message));
 		}
 
 		// Decode message for arguments
 		Handle<Value> result = Decoder::DecodeMessage(reply_message);
-		Handle<Value> args[] = {
+		Handle<Value> info[] = {
 			err,
 			result
 		};
@@ -54,7 +54,7 @@ namespace NodeDBus {
 		dbus_message_unref(reply_message);
 
 		// Invoke
-		data->callback->Call(2, args);
+		data->callback->Call(2, info);
 	}
 
 	static void method_free(void *user_data)
@@ -66,17 +66,17 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(GetBus) {
-		NanScope();
+		Nan::HandleScope scope;
 		DBusConnection *connection = NULL;
 		DBusError error;
 
 		dbus_error_init(&error);
 
-		if (!args[0]->IsNumber())
-			return NanThrowError("First parameter must be an integer");
+		if (!info[0]->IsNumber())
+			return Nan::ThrowError("First parameter must be an integer");
 
 		// Create connection
-		switch(args[0]->IntegerValue()) {
+		switch(info[0]->IntegerValue()) {
 		case NODE_DBUS_BUS_SYSTEM:
 			connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 			break;
@@ -88,73 +88,73 @@ namespace NodeDBus {
 
 		if (connection == NULL) {
 			if (dbus_error_is_set(&error))
-				return NanThrowError(error.message);
+				return Nan::ThrowError(error.message);
 			else
-				return NanThrowError("Failed to get bus object");
+				return Nan::ThrowError("Failed to get bus object");
 		}
 
 		// Initializing connection object
-		Local<ObjectTemplate> object_template = NanNew<ObjectTemplate>();
+		Local<ObjectTemplate> object_template = Nan::New<ObjectTemplate>();
 		object_template->SetInternalFieldCount(1);
 
 		// Create bus object
 		BusObject *bus = new BusObject;
-		bus->type = static_cast<BusType>(args[0]->IntegerValue());
+		bus->type = static_cast<BusType>(info[0]->IntegerValue());
 		bus->connection = connection;
 
 		// Create a JavaScript object to store bus object
 		Local<Object> bus_object = object_template->NewInstance();
-		NanSetInternalFieldPointer(bus_object, 0, bus);
-		bus_object->Set(NanNew("uniqueName"), NanNew<String>(dbus_bus_get_unique_name(connection)));
+		Nan::SetInternalFieldPointer(bus_object, 0, bus);
+		bus_object->Set(Nan::New("uniqueName").ToLocalChecked(), Nan::New<String>(dbus_bus_get_unique_name(connection)).ToLocalChecked());
 
 		// Initializing connection handler
 		Connection::Init(bus);
 
-		NanReturnValue(bus_object);
+		info.GetReturnValue().Set(bus_object);
 	}
 
 	NAN_METHOD(ReleaseBus) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		Local<Object> bus_object = args[0]->ToObject();
+		Local<Object> bus_object = info[0]->ToObject();
 		//BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
-		BusObject *bus = static_cast<BusObject *>(NanGetInternalFieldPointer(bus_object, 0));
+		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
 
 		// Release connection handler
 		Connection::UnInit(bus);
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(CallMethod) {
-		NanScope();
+		Nan::HandleScope scope;
 		DBusError error;
 
-		if (!args[8]->IsFunction())
-			return NanThrowError("Require callback function");
+		if (!info[8]->IsFunction())
+			return Nan::ThrowError("Require callback function");
 
 		int timeout = -1;
-		if (args[6]->IsInt32())
-			timeout = args[6]->Int32Value();
+		if (info[6]->IsInt32())
+			timeout = info[6]->Int32Value();
 
 		// Get bus from internal field
-		if (!args[0]->IsObject())
-			return NanThrowError("First argument must be an object");
+		if (!info[0]->IsObject())
+			return Nan::ThrowError("First argument must be an object");
 
-		Local<Object> bus_object = args[0]->ToObject();
-		BusObject *bus = static_cast<BusObject *>(NanGetInternalFieldPointer(bus_object, 0));
+		Local<Object> bus_object = info[0]->ToObject();
+		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
 
 		// Initializing error handler
 		dbus_error_init(&error);
 
 		// Create message for method call
-		if (!args[1]->IsString() || !args[2]->IsString() || !args[3]->IsString() || !args[4]->IsString())
-			return NanThrowError("Require service name, object path, interface and method");
+		if (!info[1]->IsString() || !info[2]->IsString() || !info[3]->IsString() || !info[4]->IsString())
+			return Nan::ThrowError("Require service name, object path, interface and method");
 
-		char *service_name = strdup(*NanUtf8String(args[1]));
-		char *object_path = strdup(*NanUtf8String(args[2]));
-		char *interface_name = strdup(*NanUtf8String(args[3]));
-		char *method = strdup(*NanUtf8String(args[4]));
+		char *service_name = strdup(*Nan::Utf8String(info[1]));
+		char *object_path = strdup(*Nan::Utf8String(info[2]));
+		char *interface_name = strdup(*Nan::Utf8String(info[3]));
+		char *method = strdup(*Nan::Utf8String(info[4]));
 
 		DBusMessage *message = dbus_message_new_method_call(service_name, object_path, interface_name, method);
 
@@ -164,23 +164,23 @@ namespace NodeDBus {
 		dbus_free(method);
 
 		if (message == NULL)
-			return NanThrowError("Failed to call method");
+			return Nan::ThrowError("Failed to call method");
 
 		// Preparing method arguments
-		if (args[7]->IsObject()) {
+		if (info[7]->IsObject()) {
 			DBusMessageIter iter;
 			DBusSignatureIter siter;
 
-			Handle<Array> argument_arr = Local<Array>::Cast(args[7]);
+			Handle<Array> argument_arr = Local<Array>::Cast(info[7]);
 			if (argument_arr->Length() > 0) {
 
 				// Initializing augument message
 				dbus_message_iter_init_append(message, &iter); 
 
 				// Initializing signature
-				char *sig = strdup(*String::Utf8Value(args[5]->ToString()));
+				char *sig = strdup(*String::Utf8Value(info[5]->ToString()));
 				if (!dbus_signature_validate(sig, &error)) {
-					return NanThrowError(error.message);
+					return Nan::ThrowError(error.message);
 				}
 
 				// Getting all signatures
@@ -205,7 +205,7 @@ namespace NodeDBus {
 		}
 
 		// Send message and call method
-		if (!args[8]->IsFunction()) {
+		if (!info[8]->IsFunction()) {
 
 			dbus_connection_send(bus->connection, message, NULL);
 
@@ -216,18 +216,18 @@ namespace NodeDBus {
 				if (message != NULL)
 					dbus_message_unref(message);
 
-				return NanThrowError("Failed to call method: Out of Memory");
+				return Nan::ThrowError("Failed to call method: Out of Memory");
 			}
 
 			// Set callback for waiting
 			DBusAsyncData *data = new DBusAsyncData;
 			data->pending = pending;
-			data->callback = new NanCallback(args[8].As<Function>());
+			data->callback = new Nan::Callback(info[8].As<Function>());
 			if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
 				if (message != NULL)
 					dbus_message_unref(message);
 
-				return NanThrowError("Failed to call method: Out of Memory");
+				return Nan::ThrowError("Failed to call method: Out of Memory");
 			}
 		}
 
@@ -236,22 +236,22 @@ namespace NodeDBus {
 
 		dbus_connection_flush(bus->connection);
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(RequestName) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (!args[0]->IsObject()) {
-			return NanThrowTypeError("First argument must be an object (bus)");
+		if (!info[0]->IsObject()) {
+			return Nan::ThrowTypeError("First argument must be an object (bus)");
 		}
 
-		if (!args[1]->IsString()) {
-			return NanThrowTypeError("Second argument must be a string (Bus Name)");
+		if (!info[1]->IsString()) {
+			return Nan::ThrowTypeError("Second argument must be a string (Bus Name)");
 		}
 
-		BusObject *bus = static_cast<BusObject *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
-		char *service_name = strdup(*String::Utf8Value(args[1]->ToString()));
+		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+		char *service_name = strdup(*String::Utf8Value(info[1]->ToString()));
 
 		// Request bus name
 		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
@@ -259,33 +259,33 @@ namespace NodeDBus {
 
 		dbus_free(service_name);
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(ParseIntrospectSource) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (!args[0]->IsString()) {
-			NanReturnNull();
+		if (!info[0]->IsString()) {
+			info.GetReturnValue().Set(Nan::Null());
 		}
 
-		char *src = strdup(*String::Utf8Value(args[0]->ToString()));
+		char *src = strdup(*String::Utf8Value(info[0]->ToString()));
 
 		Handle<Value> obj = Introspect::CreateObject(src);
 
 		dbus_free(src);
 
-		NanReturnValue(obj);
+		info.GetReturnValue().Set(obj);
 	}
 
 	NAN_METHOD(AddSignalFilter) {
-		NanScope();
+		Nan::HandleScope scope;
 		DBusError error;
 
-		Local<Object> bus_object = args[0]->ToObject();
-		char *rule_str = strdup(*String::Utf8Value(args[1]->ToString()));
+		Local<Object> bus_object = info[0]->ToObject();
+		char *rule_str = strdup(*String::Utf8Value(info[1]->ToString()));
 
-		BusObject *bus = static_cast<BusObject *>(NanGetInternalFieldPointer(bus_object, 0));
+		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
 
 		dbus_error_init(&error);
 
@@ -296,41 +296,41 @@ namespace NodeDBus {
 			printf("Failed to add rule: %s\n", rule_str);
 			dbus_free(rule_str);
 
-			return NanThrowError(error.message);
+			return Nan::ThrowError(error.message);
 		}
 
 		dbus_free(rule_str);
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(SetMaxMessageSize) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		Local<Object> bus_object = args[0]->ToObject();
+		Local<Object> bus_object = info[0]->ToObject();
 
-		BusObject *bus = static_cast<BusObject *>(NanGetInternalFieldPointer(bus_object, 0));
+		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
 
-		dbus_connection_set_max_message_size(bus->connection, args[1]->ToInteger()->Value());
+		dbus_connection_set_max_message_size(bus->connection, info[1]->ToInteger()->Value());
 		dbus_connection_flush(bus->connection);
 
-		NanReturnUndefined();
+		return;
 	}
 
 	static void init(Handle<Object> exports) {
-		NODE_SET_METHOD(exports, "getBus", GetBus);
-		NODE_SET_METHOD(exports, "releaseBus", ReleaseBus);
-		NODE_SET_METHOD(exports, "callMethod", CallMethod);
-		NODE_SET_METHOD(exports, "requestName", RequestName);
-		NODE_SET_METHOD(exports, "registerObjectPath", ObjectHandler::RegisterObjectPath);
-		NODE_SET_METHOD(exports, "sendMessageReply", ObjectHandler::SendMessageReply);
-		NODE_SET_METHOD(exports, "sendErrorMessageReply", ObjectHandler::SendErrorMessageReply);
-		NODE_SET_METHOD(exports, "setObjectHandler", ObjectHandler::SetObjectHandler);
-		NODE_SET_METHOD(exports, "parseIntrospectSource", ParseIntrospectSource);
-		NODE_SET_METHOD(exports, "setSignalHandler", Signal::SetSignalHandler);
-		NODE_SET_METHOD(exports, "addSignalFilter", AddSignalFilter);
-		NODE_SET_METHOD(exports, "setMaxMessageSize", SetMaxMessageSize);
-		NODE_SET_METHOD(exports, "emitSignal", Signal::EmitSignal);
+		Nan::SetMethod(exports, "getBus", GetBus);
+		Nan::SetMethod(exports, "releaseBus", ReleaseBus);
+		Nan::SetMethod(exports, "callMethod", CallMethod);
+		Nan::SetMethod(exports, "requestName", RequestName);
+		Nan::SetMethod(exports, "registerObjectPath", ObjectHandler::RegisterObjectPath);
+		Nan::SetMethod(exports, "sendMessageReply", ObjectHandler::SendMessageReply);
+		Nan::SetMethod(exports, "sendErrorMessageReply", ObjectHandler::SendErrorMessageReply);
+		Nan::SetMethod(exports, "setObjectHandler", ObjectHandler::SetObjectHandler);
+		Nan::SetMethod(exports, "parseIntrospectSource", ParseIntrospectSource);
+		Nan::SetMethod(exports, "setSignalHandler", Signal::SetSignalHandler);
+		Nan::SetMethod(exports, "addSignalFilter", AddSignalFilter);
+		Nan::SetMethod(exports, "setMaxMessageSize", SetMaxMessageSize);
+		Nan::SetMethod(exports, "emitSignal", Signal::EmitSignal);
 
 	}
 

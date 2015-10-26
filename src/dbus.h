@@ -17,8 +17,8 @@ namespace NodeDBus {
 	static_cast<v8::PropertyAttribute>(v8::ReadOnly|v8::DontDelete))
 
 	typedef struct DBusAsyncData {
-//		Persistent<Function> callback;
-		NanCallback *callback;
+//		Nan::Persistent<Function> callback;
+		Nan::Callback *callback;
 		DBusPendingCall *pending;
 
 		~DBusAsyncData() {
@@ -44,7 +44,7 @@ namespace NodeDBus {
 		std::string interface;
 	} InterfaceObject;
 
-	void EmitSignal(Handle<Value> args);
+	void EmitSignal(Handle<Value> info);
 }
 
 #endif

@@ -14,82 +14,82 @@ namespace Signal {
 	using namespace v8;
 	using namespace std;
 
-	//Persistent<Function> handler = Persistent<Function>::New(Handle<Function>::Cast(NanNull()));
+	//Persistent<Function> handler = Nan::Persistent<Function>::New(Handle<Function>::Cast(Nan::Null()));
 	bool hookSignal = false;
-	Persistent<Function> handler;
+	Nan::Persistent<Function> handler;
 
-	void DispatchSignal(Handle<Value> args[])
+	void DispatchSignal(Handle<Value> info[])
 	{
-		NanScope();
+		Nan::HandleScope scope;
 
 		if (!hookSignal)
 			return;
 
-//		MakeCallback(handler, handler, 6, args);
-		NanMakeCallback(NanGetCurrentContext()->Global(), NanNew(handler), 6, args);
+//		MakeCallback(handler, handler, 6, info);
+		Nan::MakeCallback(Nan::GetCurrentContext()->Global(), Nan::New(handler), 6, info);
 	}
 
 	NAN_METHOD(SetSignalHandler) {
-		NanScope();
+		Nan::HandleScope scope;
 
 //		handler.Dispose();
 //		handler.Clear();
 
 		hookSignal = true;
-		NanAssignPersistent(handler, args[0].As<Function>());
-//		handler = Persistent<Function>::New(Handle<Function>::Cast(args[0]));
+		handler.Reset(info[0].As<Function>());
+//		handler = Nan::Persistent<Function>::New(Handle<Function>::Cast(info[0]));
 
-		NanReturnUndefined();
+		return;
 	}
 
 	NAN_METHOD(EmitSignal) {
-		NanScope();
+		Nan::HandleScope scope;
 
-		if (!args[0]->IsObject()) {
-			return NanThrowTypeError("First parameter must be an object");
+		if (!info[0]->IsObject()) {
+			return Nan::ThrowTypeError("First parameter must be an object");
 		}
 
 		// Object path
-		if (!args[1]->IsString()) {
-			return NanThrowTypeError("Require object path");
+		if (!info[1]->IsString()) {
+			return Nan::ThrowTypeError("Require object path");
 		}
 
 		// Interface name
-		if (!args[2]->IsString()) {
-			return NanThrowTypeError("Require interface");
+		if (!info[2]->IsString()) {
+			return Nan::ThrowTypeError("Require interface");
 		}
 
 		// Signal name
-		if (!args[3]->IsString()) {
-			return NanThrowTypeError("Require signal name");
+		if (!info[3]->IsString()) {
+			return Nan::ThrowTypeError("Require signal name");
 		}
 
 		// Arguments
-		if (!args[4]->IsArray()) {
-			return NanThrowTypeError("Require arguments");
+		if (!info[4]->IsArray()) {
+			return Nan::ThrowTypeError("Require arguments");
 		}
 
 		// Signatures
-		if (!args[5]->IsArray()) {
-			return NanThrowTypeError("Require signature");
+		if (!info[5]->IsArray()) {
+			return Nan::ThrowTypeError("Require signature");
 		}
 
-		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(NanGetInternalFieldPointer(args[0]->ToObject(), 0));
+		NodeDBus::BusObject *bus = static_cast<NodeDBus::BusObject *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
 		DBusMessage *message;
 		DBusMessageIter iter;
 
 		// Create a signal
-		char *path = strdup(*String::Utf8Value(args[1]->ToString()));
-		char *interface = strdup(*String::Utf8Value(args[2]->ToString()));
-		char *signal = strdup(*String::Utf8Value(args[3]->ToString()));
+		char *path = strdup(*String::Utf8Value(info[1]->ToString()));
+		char *interface = strdup(*String::Utf8Value(info[2]->ToString()));
+		char *signal = strdup(*String::Utf8Value(info[3]->ToString()));
 		message = dbus_message_new_signal(path, interface, signal);
 
 		// Preparing message
 		dbus_message_iter_init_append(message, &iter);
 
 		// Preparing arguments
-		Local<Array> arguments = Local<Array>::Cast(args[4]);
-		Local<Array> signatures = Local<Array>::Cast(args[5]);
+		Local<Array> arguments = Local<Array>::Cast(info[4]);
+		Local<Array> signatures = Local<Array>::Cast(info[5]);
 		for (unsigned int i = 0; i < arguments->Length(); ++i) {
 			Local<Value> arg = arguments->Get(i);
 
@@ -113,7 +113,7 @@ namespace Signal {
 		dbus_free(interface);
 		dbus_free(signal);
 
-		NanReturnUndefined();
+		return;
 	}
 }
 

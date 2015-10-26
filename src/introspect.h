@@ -16,10 +16,10 @@ namespace Introspect {
 	} IntrospectClass;
 
 	typedef struct {
-		Persistent<Object> obj;
-		Persistent<Object> current_interface;
-		Persistent<Object> current_method;
-		Persistent<Array> current_signal;
+		Nan::Persistent<Object> obj;
+		Nan::Persistent<Object> current_interface;
+		Nan::Persistent<Object> current_method;
+		Nan::Persistent<Array> current_signal;
 		IntrospectClass current_class;
 	} IntrospectObject;
 
