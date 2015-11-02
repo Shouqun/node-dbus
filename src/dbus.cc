@@ -35,7 +35,7 @@ namespace NodeDBus {
 		// Get current context from V8
 		Nan::HandleScope scope;
 
-		Handle<Value> err = Nan::Null();
+		Local<Value> err = Nan::Null();
 		if (dbus_error_is_set(&error)) {
 			err = Nan::Error(error.message);
 			dbus_error_free(&error);
@@ -44,8 +44,8 @@ namespace NodeDBus {
 		}
 
 		// Decode message for arguments
-		Handle<Value> result = Decoder::DecodeMessage(reply_message);
-		Handle<Value> info[] = {
+		Local<Value> result = Decoder::DecodeMessage(reply_message);
+		Local<Value> info[] = {
 			err,
 			result
 		};
@@ -271,7 +271,7 @@ namespace NodeDBus {
 
 		char *src = strdup(*String::Utf8Value(info[0]->ToString()));
 
-		Handle<Value> obj = Introspect::CreateObject(src);
+		Local<Value> obj = Introspect::CreateObject(src);
 
 		dbus_free(src);
 

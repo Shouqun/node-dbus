@@ -12,7 +12,7 @@ namespace Decoder {
 	using namespace v8;
 	using namespace std;
 
-	Handle<Value> DecodeMessageIter(DBusMessageIter *iter, const char *signature)
+	Local<Value> DecodeMessageIter(DBusMessageIter *iter, const char *signature)
 	{
 		Nan::EscapableHandleScope scope;
 		DBusSignatureIter siter;
@@ -67,7 +67,7 @@ namespace Decoder {
 			char *sig = NULL;
 
 			// Create a object
-			Handle<Object> result = Nan::New<Object>();
+			Local<Object> result = Nan::New<Object>();
 
 			do {
 				// Getting sub iterator
@@ -125,7 +125,7 @@ namespace Decoder {
 			if (is_dict) {
 
 				// Create a object
-				Handle<Object> result = Nan::New<Object>();
+				Local<Object> result = Nan::New<Object>();
 
 				// Make sure it doesn't empty
 				if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_INVALID)
@@ -164,7 +164,7 @@ namespace Decoder {
 
 			// Create an array
 			unsigned int count = 0;
-			Handle<Array> result = Nan::New<Array>();
+			Local<Array> result = Nan::New<Array>();
 			if (dbus_message_iter_get_arg_type(&internal_iter) == DBUS_TYPE_INVALID)
 				return scope.Escape(result);
 
@@ -193,7 +193,7 @@ namespace Decoder {
 			dbus_message_iter_recurse(iter, &internal_iter);
 
 			sig = dbus_message_iter_get_signature(&internal_iter);
-			Handle<Value> value = DecodeMessageIter(&internal_iter, sig);
+			Local<Value> value = DecodeMessageIter(&internal_iter, sig);
 			dbus_free(sig);
 
 			return scope.Escape(value);
@@ -207,7 +207,7 @@ namespace Decoder {
 		return Nan::Undefined();
 	}
 
-	Handle<Value> DecodeMessage(DBusMessage *message)
+	Local<Value> DecodeMessage(DBusMessage *message)
 	{
 		Nan::EscapableHandleScope scope;
 		DBusMessageIter iter;
@@ -221,10 +221,10 @@ namespace Decoder {
 		if (dbus_message_iter_get_arg_type(&iter) == DBUS_TYPE_INVALID)
 			return Nan::Undefined();
 
-		Handle<Array> result = Nan::New<Array>();
+		Local<Array> result = Nan::New<Array>();
 		unsigned int count = 0;
 		char *signature = NULL;
-		Handle<Value> value;
+		Local<Value> value;
 
 		do {
 			signature = dbus_message_iter_get_signature(&iter);
@@ -245,11 +245,11 @@ namespace Decoder {
 		return scope.Escape(result);
 	}
 
-	Handle<Value> DecodeArguments(DBusMessage *message)
+	Local<Value> DecodeArguments(DBusMessage *message)
 	{
 		Nan::EscapableHandleScope scope;
 		DBusMessageIter iter;
-		Handle<Array> result = Nan::New<Array>();
+		Local<Array> result = Nan::New<Array>();
 
 		if (!dbus_message_iter_init(message, &iter))
 			return scope.Escape(result);

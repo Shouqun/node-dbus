@@ -18,7 +18,7 @@ namespace Signal {
 	bool hookSignal = false;
 	Nan::Persistent<Function> handler;
 
-	void DispatchSignal(Handle<Value> info[])
+	void DispatchSignal(Local<Value> info[])
 	{
 		Nan::HandleScope scope;
 
