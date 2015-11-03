@@ -37,9 +37,9 @@ namespace ObjectHandler {
 		Nan::SetInternalFieldPointer(message_object, 1, message);
 
 		// Getting arguments
-		Handle<Value> arguments = Decoder::DecodeArguments(message);
+		Local<Value> arguments = Decoder::DecodeArguments(message);
 
-		Handle<Value> info[] = {
+		Local<Value> info[] = {
 			Nan::New<String>(dbus_bus_get_unique_name(connection)).ToLocalChecked(),
 			Nan::New<String>(sender).ToLocalChecked(),
 			Nan::New<String>(object_path).ToLocalChecked(),
