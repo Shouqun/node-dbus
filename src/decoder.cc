@@ -76,13 +76,13 @@ namespace Decoder {
 
 				// Getting key
 				sig = dbus_message_iter_get_signature(&dict_entry_iter);
-				Handle<Value> key = DecodeMessageIter(&dict_entry_iter, sig);
+				Local<Value> key = DecodeMessageIter(&dict_entry_iter, sig);
 				dbus_free(sig);
 				if (key->IsUndefined())
 					continue;
 
 				// Try to get next element
-				Handle<Value> value;
+				Local<Value> value;
 				if (dbus_message_iter_next(&dict_entry_iter)) {
 					// Getting value
 					sig = dbus_message_iter_get_signature(&dict_entry_iter);
@@ -138,13 +138,13 @@ namespace Decoder {
 
 					// Getting key
 					sig = dbus_message_iter_get_signature(&dict_entry_iter);
-					Handle<Value> key = DecodeMessageIter(&dict_entry_iter, sig);
+					Local<Value> key = DecodeMessageIter(&dict_entry_iter, sig);
 					dbus_free(sig);
 					if (key->IsUndefined())
 						continue;
 
 					// Try to get next element
-					Handle<Value> value;
+					Local<Value> value;
 					if (dbus_message_iter_next(&dict_entry_iter)) {
 						// Getting value
 						sig = dbus_message_iter_get_signature(&dict_entry_iter);
@@ -172,7 +172,7 @@ namespace Decoder {
 
 				// Getting element
 				sig = dbus_message_iter_get_signature(&internal_iter);
-				Handle<Value> value = DecodeMessageIter(&internal_iter, sig);
+				Local<Value> value = DecodeMessageIter(&internal_iter, sig);
 				dbus_free(sig);
 				if (value->IsUndefined())
 					continue;
@@ -266,7 +266,7 @@ namespace Decoder {
 
 		do {
 			signature = dbus_message_iter_get_signature(&iter);
-			Handle<Value> value = DecodeMessageIter(&iter, signature);
+			Local<Value> value = DecodeMessageIter(&iter, signature);
 			dbus_free(signature);
 			if (value->IsUndefined())
 				continue;

@@ -308,7 +308,7 @@ namespace NodeDBus {
 		return;
 	}
 
-	static void init(Handle<Object> exports) {
+	static void init(Local<Object> exports) {
 		Nan::SetMethod(exports, "getBus", GetBus);
 		Nan::SetMethod(exports, "releaseBus", ReleaseBus);
 		Nan::SetMethod(exports, "callMethod", CallMethod);
