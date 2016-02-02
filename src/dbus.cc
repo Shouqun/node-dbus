@@ -171,7 +171,7 @@ namespace NodeDBus {
 			DBusMessageIter iter;
 			DBusSignatureIter siter;
 
-			Handle<Array> argument_arr = Local<Array>::Cast(info[7]);
+			Local<Array> argument_arr = Local<Array>::Cast(info[7]);
 			if (argument_arr->Length() > 0) {
 
 				// Initializing augument message
@@ -187,7 +187,7 @@ namespace NodeDBus {
 				dbus_signature_iter_init(&siter, sig);
 				for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 					char *arg_sig = dbus_signature_iter_get_signature(&siter);
-					Handle<Value> arg = argument_arr->Get(i);
+					Local<Value> arg = argument_arr->Get(i);
 
 					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
 						dbus_free(arg_sig);
