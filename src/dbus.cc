@@ -66,7 +66,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(GetBus) {
-		Nan::HandleScope scope;
 		DBusConnection *connection = NULL;
 		DBusError error;
 
@@ -114,8 +113,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(ReleaseBus) {
-		Nan::HandleScope scope;
-
 		Local<Object> bus_object = info[0]->ToObject();
 		//BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
@@ -127,7 +124,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(CallMethod) {
-		Nan::HandleScope scope;
 		DBusError error;
 
 		if (!info[8]->IsFunction())
@@ -240,8 +236,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(RequestName) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First argument must be an object (bus)");
 		}
@@ -263,8 +257,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(ParseIntrospectSource) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsString()) {
 			info.GetReturnValue().Set(Nan::Null());
 		}
@@ -281,7 +273,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(AddSignalFilter) {
-		Nan::HandleScope scope;
 		DBusError error;
 
 		Local<Object> bus_object = info[0]->ToObject();
@@ -307,8 +298,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(SetMaxMessageSize) {
-		Nan::HandleScope scope;
-
 		Local<Object> bus_object = info[0]->ToObject();
 
 		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
