@@ -268,14 +268,16 @@ namespace NodeDBus {
 		if (!info[0]->IsString()) {
 			info.GetReturnValue().Set(Nan::Null());
 		}
+		else {
 
-		char *src = strdup(*String::Utf8Value(info[0]->ToString()));
+			char *src = strdup(*String::Utf8Value(info[0]->ToString()));
 
-		Local<Value> obj = Introspect::CreateObject(src);
+			Local<Value> obj = Introspect::CreateObject(src);
 
-		dbus_free(src);
+			dbus_free(src);
 
-		info.GetReturnValue().Set(obj);
+			info.GetReturnValue().Set(obj);
+		}
 	}
 
 	NAN_METHOD(AddSignalFilter) {
