@@ -66,7 +66,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(GetBus) {
-		Nan::HandleScope scope;
 		DBusConnection *connection = NULL;
 		DBusError error;
 
@@ -114,8 +113,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(ReleaseBus) {
-		Nan::HandleScope scope;
-
 		Local<Object> bus_object = info[0]->ToObject();
 		//BusObject *bus = static_cast<BusObject *>(External::Unwrap(bus_object->GetInternalField(0)));
 		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
@@ -127,7 +124,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(CallMethod) {
-		Nan::HandleScope scope;
 		DBusError error;
 
 		if (!info[8]->IsFunction())
@@ -171,7 +167,7 @@ namespace NodeDBus {
 			DBusMessageIter iter;
 			DBusSignatureIter siter;
 
-			Handle<Array> argument_arr = Local<Array>::Cast(info[7]);
+			Local<Array> argument_arr = Local<Array>::Cast(info[7]);
 			if (argument_arr->Length() > 0) {
 
 				// Initializing augument message
@@ -187,7 +183,7 @@ namespace NodeDBus {
 				dbus_signature_iter_init(&siter, sig);
 				for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 					char *arg_sig = dbus_signature_iter_get_signature(&siter);
-					Handle<Value> arg = argument_arr->Get(i);
+					Local<Value> arg = argument_arr->Get(i);
 
 					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
 						dbus_free(arg_sig);
@@ -240,8 +236,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(RequestName) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First argument must be an object (bus)");
 		}
@@ -263,23 +257,22 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(ParseIntrospectSource) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsString()) {
 			info.GetReturnValue().Set(Nan::Null());
 		}
+		else {
 
-		char *src = strdup(*String::Utf8Value(info[0]->ToString()));
+			char *src = strdup(*String::Utf8Value(info[0]->ToString()));
 
-		Local<Value> obj = Introspect::CreateObject(src);
+			Local<Value> obj = Introspect::CreateObject(src);
 
-		dbus_free(src);
+			dbus_free(src);
 
-		info.GetReturnValue().Set(obj);
+			info.GetReturnValue().Set(obj);
+		}
 	}
 
 	NAN_METHOD(AddSignalFilter) {
-		Nan::HandleScope scope;
 		DBusError error;
 
 		Local<Object> bus_object = info[0]->ToObject();
@@ -305,8 +298,6 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(SetMaxMessageSize) {
-		Nan::HandleScope scope;
-
 		Local<Object> bus_object = info[0]->ToObject();
 
 		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(bus_object, 0));
@@ -317,7 +308,7 @@ namespace NodeDBus {
 		return;
 	}
 
-	static void init(Handle<Object> exports) {
+	static void init(Local<Object> exports) {
 		Nan::SetMethod(exports, "getBus", GetBus);
 		Nan::SetMethod(exports, "releaseBus", ReleaseBus);
 		Nan::SetMethod(exports, "callMethod", CallMethod);

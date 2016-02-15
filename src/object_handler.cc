@@ -97,8 +97,6 @@ namespace ObjectHandler {
 	DBusObjectPathVTable vtable = CreateVTable();
 
 	NAN_METHOD(RegisterObjectPath) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First parameter must be an object (bus)");
 		}
@@ -125,8 +123,6 @@ namespace ObjectHandler {
 	}
 
 	NAN_METHOD(SendMessageReply) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First parameter must be an object");
 		}
@@ -146,8 +142,6 @@ namespace ObjectHandler {
 	}
 
 	NAN_METHOD(SendErrorMessageReply) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First parameter must be an object");
 		}
@@ -175,8 +169,6 @@ namespace ObjectHandler {
 	}
 
 	NAN_METHOD(SetObjectHandler) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsFunction()) {
 			return Nan::ThrowTypeError("First parameter must be a function");
 		}

@@ -44,7 +44,7 @@ namespace NodeDBus {
 		std::string interface;
 	} InterfaceObject;
 
-	void EmitSignal(Handle<Value> info);
+	void EmitSignal(Local<Value> info);
 }
 
 #endif

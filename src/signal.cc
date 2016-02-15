@@ -30,8 +30,6 @@ namespace Signal {
 	}
 
 	NAN_METHOD(SetSignalHandler) {
-		Nan::HandleScope scope;
-
 //		handler.Dispose();
 //		handler.Clear();
 
@@ -43,8 +41,6 @@ namespace Signal {
 	}
 
 	NAN_METHOD(EmitSignal) {
-		Nan::HandleScope scope;
-
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First parameter must be an object");
 		}
