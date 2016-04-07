@@ -42,13 +42,61 @@ namespace Encoder {
 		} else if (value->IsArray()) {
 
 			Local<Array> arrayData = Local<Array>::Cast(value);
-			for (unsigned int i = 0; i < arrayData->Length(); ++i) {
-				if (!arrayData->Get(i)->IsString())
-					break;
-				if (i == (arrayData->Length() - 1))
-					return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_STRING_AS_STRING);
-			}
 
+			if (arrayData->Length() == 0)
+				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
+
+			Local<Value> firstArrayItem = arrayData->Get(0);
+
+			if (firstArrayItem->IsTrue() || firstArrayItem->IsFalse() || firstArrayItem->IsBoolean()) {
+				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!arrayItem->IsTrue() && !arrayItem->IsFalse() && !arrayItem->IsBoolean())
+						break;
+					if (i == (arrayData->Length() - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_BOOLEAN_AS_STRING);
+				}
+			} else if (IsByte(firstArrayItem)) {
+				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!IsByte(arrayItem))
+						break;
+					if (i == (arrayData->Length() - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_BYTE_AS_STRING);
+				}
+			} else if (firstArrayItem->IsUint32()) {
+				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!arrayItem->IsUint32())
+						break;
+					if (i == (arrayData->Length() - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_UINT32_AS_STRING);
+				}
+			} else if (firstArrayItem->IsInt32()) {
+				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!arrayItem->IsInt32())
+						break;
+					if (i == (arrayData->Length() - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_INT32_AS_STRING);
+				}
+			} else if (firstArrayItem->IsNumber()) {
+				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!arrayItem->IsNumber())
+						break;
+					if (i == (arrayData->Length() - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_DOUBLE_AS_STRING);
+				}
+			} else if (firstArrayItem->IsString()) {
+				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!arrayItem->IsString())
+						break;
+					if (i == (arrayData->Length() - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_STRING_AS_STRING);
+				}
+			}
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
 		} else if (value->IsObject()) {
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING
