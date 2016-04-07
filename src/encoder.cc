@@ -313,7 +313,7 @@ namespace Encoder {
 			const char *var_sig = GetSignatureFromV8Type(value);
 
 			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, var_sig, &subIter)) {
-				printf("Can't open contianer for VARIANT type\n");
+				printf("Can't open container for VARIANT type\n");
 				return false;
 			}
 
