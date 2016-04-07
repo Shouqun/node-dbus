@@ -40,6 +40,15 @@ namespace Encoder {
 		} else if (value->IsString()) {
 			return const_cast<char*>(DBUS_TYPE_STRING_AS_STRING);
 		} else if (value->IsArray()) {
+
+			Local<Array> arrayData = Local<Array>::Cast(value);
+			for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+				if (!arrayData->Get(i)->IsString())
+					break;
+				if (i == (arrayData->Length() - 1))
+					return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_STRING_AS_STRING);
+			}
+
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
 		} else if (value->IsObject()) {
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING
