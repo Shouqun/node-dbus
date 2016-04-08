@@ -103,6 +103,28 @@ namespace Encoder {
 						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_STRING_AS_STRING);
 				}
 			}
+			if (lastArrayItem->IsArray()) {
+				for (unsigned int i = 0; i < arrayDataLength; ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!arrayItem->IsArray())
+						break;
+					if (i == (arrayDataLength - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_ARRAY_AS_STRING
+							DBUS_TYPE_VARIANT_AS_STRING);
+				}
+			}
+			if (lastArrayItem->IsObject()) {
+				for (unsigned int i = 0; i < arrayDataLength; ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+					if (!arrayItem->IsObject())
+						break;
+					if (i == (arrayDataLength - 1))
+						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_ARRAY_AS_STRING
+							DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+							DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
+							DBUS_DICT_ENTRY_END_CHAR_AS_STRING);
+				}
+			}
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
 		} else if (value->IsObject()) {
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING
