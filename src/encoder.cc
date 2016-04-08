@@ -57,7 +57,8 @@ namespace Encoder {
 					if (i == (arrayDataLength - 1))
 						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_BOOLEAN_AS_STRING);
 				}
-			} else if (IsByte(lastArrayItem)) {
+			}
+			if (IsByte(lastArrayItem)) {
 				for (unsigned int i = 0; i < arrayDataLength; ++i) {
 					Local<Value> arrayItem = arrayData->Get(i);
 					if (!IsByte(arrayItem))
@@ -65,7 +66,8 @@ namespace Encoder {
 					if (i == (arrayDataLength - 1))
 						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_BYTE_AS_STRING);
 				}
-			} else if (lastArrayItem->IsUint32()) {
+			}
+			if (lastArrayItem->IsUint32()) {
 				for (unsigned int i = 0; i < arrayDataLength; ++i) {
 					Local<Value> arrayItem = arrayData->Get(i);
 					if (!arrayItem->IsUint32())
@@ -73,7 +75,8 @@ namespace Encoder {
 					if (i == (arrayDataLength - 1))
 						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_UINT32_AS_STRING);
 				}
-			} else if (lastArrayItem->IsInt32()) {
+			}
+			if (lastArrayItem->IsInt32()) {
 				for (unsigned int i = 0; i < arrayDataLength; ++i) {
 					Local<Value> arrayItem = arrayData->Get(i);
 					if (!arrayItem->IsInt32())
@@ -81,7 +84,8 @@ namespace Encoder {
 					if (i == (arrayDataLength - 1))
 						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_INT32_AS_STRING);
 				}
-			} else if (lastArrayItem->IsNumber()) {
+			}
+			if (lastArrayItem->IsNumber()) {
 				for (unsigned int i = 0; i < arrayDataLength; ++i) {
 					Local<Value> arrayItem = arrayData->Get(i);
 					if (!arrayItem->IsNumber())
@@ -89,7 +93,8 @@ namespace Encoder {
 					if (i == (arrayDataLength - 1))
 						return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_DOUBLE_AS_STRING);
 				}
-			} else if (lastArrayItem->IsString()) {
+			}
+			if (lastArrayItem->IsString()) {
 				for (unsigned int i = 0; i < arrayDataLength; ++i) {
 					Local<Value> arrayItem = arrayData->Get(i);
 					if (!arrayItem->IsString())
