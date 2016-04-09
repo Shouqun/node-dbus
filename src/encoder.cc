@@ -14,7 +14,7 @@ namespace Encoder {
 	using namespace v8;
 	using namespace std;
 
-	bool IsByte(Local<Value> value)
+	bool IsByte(Local<Value>& value)
 	{
 		if(value->IsUint32()) {
 			int number = value->Int32Value();
