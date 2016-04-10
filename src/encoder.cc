@@ -79,19 +79,19 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 		if (IsByte(value)) {
 			return const_cast<char*>(DBUS_TYPE_BYTE_AS_STRING);
 		}
-		if (value->IsUint32()) {
+		if (IsUint32(value)) {
 			return const_cast<char*>(DBUS_TYPE_UINT32_AS_STRING);
 		}
-		if (value->IsInt32()) {
+		if (IsInt32(value)) {
 			return const_cast<char*>(DBUS_TYPE_INT32_AS_STRING);
 		}
-		if (value->IsNumber()) {
+		if (IsNumber(value)) {
 			return const_cast<char*>(DBUS_TYPE_DOUBLE_AS_STRING);
 		}
-		if (value->IsString()) {
+		if (IsString(value)) {
 			return const_cast<char*>(DBUS_TYPE_STRING_AS_STRING);
 		}
-		if (value->IsArray()) {
+		if (IsArray(value)) {
 
 			Local<Array> arrayData = Local<Array>::Cast(value);
 
@@ -128,7 +128,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 			}
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
 		}
-		if (value->IsObject()) {
+		if (IsObject(value)) {
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING
 				DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
 				DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
