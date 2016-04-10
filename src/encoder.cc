@@ -75,17 +75,23 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 	{
 		if (value->IsTrue() || value->IsFalse() || value->IsBoolean() ) {
 			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
-		} else if (IsByte(value)) {
+		}
+		if (IsByte(value)) {
 			return const_cast<char*>(DBUS_TYPE_BYTE_AS_STRING);
-		} else if (value->IsUint32()) {
+		}
+		if (value->IsUint32()) {
 			return const_cast<char*>(DBUS_TYPE_UINT32_AS_STRING);
-		} else if (value->IsInt32()) {
+		}
+		if (value->IsInt32()) {
 			return const_cast<char*>(DBUS_TYPE_INT32_AS_STRING);
-		} else if (value->IsNumber()) {
+		}
+		if (value->IsNumber()) {
 			return const_cast<char*>(DBUS_TYPE_DOUBLE_AS_STRING);
-		} else if (value->IsString()) {
+		}
+		if (value->IsString()) {
 			return const_cast<char*>(DBUS_TYPE_STRING_AS_STRING);
-		} else if (value->IsArray()) {
+		}
+		if (value->IsArray()) {
 
 			Local<Array> arrayData = Local<Array>::Cast(value);
 
@@ -121,14 +127,14 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 					DBUS_DICT_ENTRY_END_CHAR_AS_STRING);
 			}
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
-		} else if (value->IsObject()) {
+		}
+		if (value->IsObject()) {
 			return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING
 				DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
 				DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
 				DBUS_DICT_ENTRY_END_CHAR_AS_STRING);
-		} else {
-			return NULL;
 		}
+		return NULL;
 	}
 
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, const char *signature)
