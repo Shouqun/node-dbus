@@ -73,7 +73,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 
 	const char *GetSignatureFromV8Type(Local<Value>& value)
 	{
-		if (value->IsTrue() || value->IsFalse() || value->IsBoolean() ) {
+		if (IsBoolean(value)) {
 			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
 		}
 		if (IsByte(value)) {
