@@ -1,6 +1,6 @@
 {
   "name": "dbus",
-  "version": "0.2.17",
+  "version": "0.2.18",
   "description": "A D-Bus binding for Node",
   "author": "Shouqun Liu <liushouqun@gmail.com>",
   "contributors": [
