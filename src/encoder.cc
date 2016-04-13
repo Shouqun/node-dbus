@@ -94,8 +94,9 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 		if (IsArray(value)) {
 
 			Local<Array> arrayData = Local<Array>::Cast(value);
+			size_t arrayDataLength = arrayData->Length();
 
-			if (arrayData->Length() == 0) {
+			if (0 == arrayDataLength) {
 				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_VARIANT_AS_STRING);
 			}
 			if (CheckArrayItems(arrayData, IsBoolean)) {
@@ -118,17 +119,17 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 			}
 			if (CheckArrayItems(arrayData, IsArray)) {
 
-				Local<Value> lastArrayItem = arrayData->Get(arrayData->Length() - 1);
+				Local<Value> lastArrayItem = arrayData->Get(arrayDataLength - 1);
 				string lastArrayItemSig = GetSignatureFromV8Type(lastArrayItem);
 
-				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+				for (unsigned int i = 0; i < arrayDataLength; ++i) {
 					Local<Value> arrayItem = arrayData->Get(i);
 
 					string sig = GetSignatureFromV8Type(arrayItem);
 
 					if (0 != sig.compare(lastArrayItemSig))
 						break;
-					if (i == (arrayData->Length() - 1))
+					if (i == (arrayDataLength - 1))
 						return string(const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING)).append(sig);
 				}
 				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_ARRAY_AS_STRING
