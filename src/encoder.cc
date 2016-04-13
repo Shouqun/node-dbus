@@ -71,7 +71,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 		return true;
 	}
 
-	const char *GetSignatureFromV8Type(Local<Value>& value)
+	string GetSignatureFromV8Type(Local<Value>& value)
 	{
 		if (IsBoolean(value)) {
 			return const_cast<char*>(DBUS_TYPE_BOOLEAN_AS_STRING);
@@ -134,7 +134,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 				DBUS_TYPE_STRING_AS_STRING DBUS_TYPE_VARIANT_AS_STRING
 				DBUS_DICT_ENTRY_END_CHAR_AS_STRING);
 		}
-		return NULL;
+		return "";
 	}
 
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, const char *signature)
@@ -396,7 +396,8 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 		{
 			DBusMessageIter subIter;
 
-			const char *var_sig = GetSignatureFromV8Type(value);
+			string str_sig = GetSignatureFromV8Type(value);
+			const char *var_sig = str_sig.c_str();
 
 			if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, var_sig, &subIter)) {
 				printf("Can't open container for VARIANT type\n");
