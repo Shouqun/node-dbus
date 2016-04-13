@@ -14,7 +14,7 @@ namespace Encoder {
 	using namespace v8;
 	using namespace std;
 
-	bool IsByte(Local<Value>& value)
+	bool IsByte(Local<Value>& value, const char* sig = NULL)
 	{
 		if(value->IsUint32()) {
 			int number = value->Int32Value();
@@ -25,47 +25,52 @@ namespace Encoder {
 		return false;
 	}
 
-	bool IsBoolean(Local<Value>& value)
+	bool IsBoolean(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsTrue() || value->IsFalse() || value->IsBoolean();
 	}
 
-	bool IsUint32(Local<Value>& value)
+	bool IsUint32(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsUint32();
 	}
 
-	bool IsInt32(Local<Value>& value)
+	bool IsInt32(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsInt32();
 	}
 
-	bool IsNumber(Local<Value>& value)
+	bool IsNumber(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsNumber();
 	}
 
-	bool IsString(Local<Value>& value)
+	bool IsString(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsString();
 	}
 
-	bool IsArray(Local<Value>& value)
+	bool IsArray(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsArray();
 	}
 
-	bool IsObject(Local<Value>& value)
+	bool IsObject(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsObject();
 	}
 
-typedef bool (*CheckTypeCallback) (Local<Value>& value);
-	bool CheckArrayItems(Local<Array>& array, CheckTypeCallback checkType)
+	bool HasSameSig(Local<Value>& value, const char* sig = NULL)
+	{
+		return (NULL != sig) && (0 == GetSignatureFromV8Type(value).compare(sig));
+	}
+
+typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
+	bool CheckArrayItems(Local<Array>& array, CheckTypeCallback checkType, const char* sig = NULL)
 	{
 		for (unsigned int i = 0; i < array->Length(); ++i) {
 			Local<Value> arrayItem = array->Get(i);
-			if (!checkType(arrayItem))
+			if (!checkType(arrayItem, sig))
 				return false;
 		}
 		return true;
@@ -122,15 +127,8 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 				Local<Value> lastArrayItem = arrayData->Get(arrayDataLength - 1);
 				string lastArrayItemSig = GetSignatureFromV8Type(lastArrayItem);
 
-				for (unsigned int i = 0; i < arrayDataLength; ++i) {
-					Local<Value> arrayItem = arrayData->Get(i);
-
-					string sig = GetSignatureFromV8Type(arrayItem);
-
-					if (0 != sig.compare(lastArrayItemSig))
-						break;
-					if (i == (arrayDataLength - 1))
-						return string(const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING)).append(sig);
+				if (CheckArrayItems(arrayData, HasSameSig, lastArrayItemSig.c_str())) {
+					return string(const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING)).append(lastArrayItemSig);
 				}
 				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_ARRAY_AS_STRING
 					DBUS_TYPE_VARIANT_AS_STRING);
