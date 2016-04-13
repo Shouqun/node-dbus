@@ -117,6 +117,20 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value);
 				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_STRING_AS_STRING);
 			}
 			if (CheckArrayItems(arrayData, IsArray)) {
+
+				Local<Value> lastArrayItem = arrayData->Get(arrayData->Length() - 1);
+				string lastArrayItemSig = GetSignatureFromV8Type(lastArrayItem);
+
+				for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+					Local<Value> arrayItem = arrayData->Get(i);
+
+					string sig = GetSignatureFromV8Type(arrayItem);
+
+					if (0 != sig.compare(lastArrayItemSig))
+						break;
+					if (i == (arrayData->Length() - 1))
+						return string(const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING)).append(sig);
+				}
 				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_ARRAY_AS_STRING
 					DBUS_TYPE_VARIANT_AS_STRING);
 			}
