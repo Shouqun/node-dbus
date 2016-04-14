@@ -62,7 +62,8 @@ namespace Encoder {
 
 	bool HasSameSig(Local<Value>& value, const char* sig = NULL)
 	{
-		return (NULL != sig) && (0 == GetSignatureFromV8Type(value).compare(sig));
+		return (NULL != sig) && (strlen(sig)) &&
+			(0 == GetSignatureFromV8Type(value).compare(sig));
 	}
 
 typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
