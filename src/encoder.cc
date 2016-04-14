@@ -62,7 +62,7 @@ namespace Encoder {
 
 	bool HasSameSig(Local<Value>& value, const char* sig = NULL)
 	{
-		return (NULL != sig) && (strlen(sig)) &&
+		return (sig) && (strlen(sig)) &&
 			(0 == GetSignatureFromV8Type(value).compare(sig));
 	}
 
