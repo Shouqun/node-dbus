@@ -40,6 +40,31 @@ namespace Encoder {
 		return value->IsInt32();
 	}
 
+	bool IsUint64(Local<Value>& value, const char* sig = NULL)
+	{
+		if (value->IsNumber()) {
+			double number = value->NumberValue();
+			if (0.0 == number - trunc(number)) {
+				int64_t integer = value->IntegerValue();
+				if (integer >= 0) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	bool IsInt64(Local<Value>& value, const char* sig = NULL)
+	{
+		if (value->IsNumber()) {
+			double number = value->NumberValue();
+			if (0.0 == number - trunc(number)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	bool IsNumber(Local<Value>& value, const char* sig = NULL)
 	{
 		return value->IsNumber();
@@ -91,6 +116,12 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 		if (IsInt32(value)) {
 			return const_cast<char*>(DBUS_TYPE_INT32_AS_STRING);
 		}
+		if (IsUint64(value)) {
+			return const_cast<char*>(DBUS_TYPE_UINT64_AS_STRING);
+		}
+		if (IsInt64(value)) {
+			return const_cast<char*>(DBUS_TYPE_INT64_AS_STRING);
+		}
 		if (IsNumber(value)) {
 			return const_cast<char*>(DBUS_TYPE_DOUBLE_AS_STRING);
 		}
@@ -116,6 +147,12 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 			}
 			if (CheckArrayItems(arrayData, IsInt32)) {
 				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_INT32_AS_STRING);
+			}
+			if (CheckArrayItems(arrayData, IsUint64)) {
+				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_UINT64_AS_STRING);
+			}
+			if (CheckArrayItems(arrayData, IsInt64)) {
+				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_INT64_AS_STRING);
 			}
 			if (CheckArrayItems(arrayData, IsNumber)) {
 				return const_cast<char*>(DBUS_TYPE_ARRAY_AS_STRING DBUS_TYPE_DOUBLE_AS_STRING);
