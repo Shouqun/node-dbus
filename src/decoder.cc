@@ -38,10 +38,16 @@ namespace Decoder {
 		case DBUS_TYPE_UINT16:
 		case DBUS_TYPE_INT32:
 		case DBUS_TYPE_UINT32:
-		case DBUS_TYPE_INT64:
 		case DBUS_TYPE_UINT64:
 		{
 			dbus_uint64_t value = 0;
+			dbus_message_iter_get_basic(iter, &value);
+			return scope.Escape(Nan::New<Number>(value));
+		}
+
+		case DBUS_TYPE_INT64:
+		{
+			dbus_int64_t value = 0;
 			dbus_message_iter_get_basic(iter, &value);
 			return scope.Escape(Nan::New<Number>(value));
 		}
