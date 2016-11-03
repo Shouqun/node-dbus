@@ -2,6 +2,7 @@
 node-dbus is a D-Bus binding for Node.js.
 
 [![Build Status](https://travis-ci.org/Shouqun/node-dbus.svg?branch=master)](https://travis-ci.org/Shouqun/node-dbus)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](#license)
 
 ## Installation
 
