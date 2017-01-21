@@ -12,7 +12,9 @@
         'src/object_handler.cc'
       ],
       'include_dirs': [
-        "<!(node -e \"require('nan')\")"
+        "<!(node -e \"require('nan')\")",
+        "/opt/local/include/dbus-1.0",
+        "/opt/local/lib/dbus-1.0/include"
       ],
       'dependencies': [
         'deps/libexpat/libexpat.gyp:expat'
