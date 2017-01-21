@@ -33,7 +33,7 @@ or equivalent for your system
 
 **Node-gyp**  
 `$ npm install -g node-gyp`  
-[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
+[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)	
 
 **libdbus**  
 `$ sudo port install dbus`

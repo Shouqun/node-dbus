@@ -12,9 +12,7 @@
         'src/object_handler.cc'
       ],
       'include_dirs': [
-        "<!(node -e \"require('nan')\")",
-        "/opt/local/include/dbus-1.0",
-        "/opt/local/lib/dbus-1.0/include"
+        "<!(node -e \"require('nan')\")"
       ],
       'dependencies': [
         'deps/libexpat/libexpat.gyp:expat'
@@ -34,6 +32,13 @@
           'libraries': [
             '<!@(pkg-config  --libs-only-l --libs-only-other dbus-1)'
           ]
+        }],
+        ['OS=="mac"', {
+          'include_dirs': [
+            "/opt/local/include/dbus-1.0",
+            "/opt/local/lib/dbus-1.0/include",
+            "/usr/local/opt"
+          ],
         }]
       ]
     }
