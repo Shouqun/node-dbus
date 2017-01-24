@@ -35,10 +35,14 @@
         }],
         ['OS=="mac"', {
           'include_dirs': [
-            "/opt/local/include/dbus-1.0",
-            "/opt/local/lib/dbus-1.0/include",
-            "/usr/local/opt"
+            '<!@(pkg-config --cflags-only-I dbus-1 | sed s/-I//g)'
           ],
+          'ldflags': [
+            '<!@(pkg-config  --libs-only-L --libs-only-other dbus-1)'
+          ],
+          'libraries': [
+            '<!@(pkg-config  --libs-only-l --libs-only-other dbus-1)'
+          ]
         }]
       ]
     }
