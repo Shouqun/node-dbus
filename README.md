@@ -29,18 +29,19 @@ or equivalent for your system
 `$ sudo apt-get install libglib2.0-dev`  
 or equivalent for your system
 
-### MacOS with MacPorts
+### MacOS with MacPorts/HomeBrew
 
 **Node-gyp**  
 `$ npm install -g node-gyp`  
-[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)	
+[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
 
 **libdbus**  
-`$ sudo port install dbus`
+MacPorts: `$ sudo port install pkg-config dbus`
+HomeBrew: `$ sudo brew install pkg-config dbus`
 
 **glib2.0**  
-`$ sudo port install glib2`
-
+MacPorts: `$ sudo port install glib2`
+HomeBrew: `$ sudo brew install glib`
 
 ## Getting Started
 Best way to get started is by looking at the examples. After the build:
