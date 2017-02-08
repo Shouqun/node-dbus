@@ -3,3 +3,4 @@ build
 *.o
 *.swp
 *.node
+node_modules

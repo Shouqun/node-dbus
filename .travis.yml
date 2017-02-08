@@ -13,6 +13,7 @@ env:
 
 before_install:
   - sudo apt-get -qq update
+  - sudo apt-get install -y dbus
   - sudo apt-get install -y libdbus-1-dev
   - sudo apt-get install -y libglib2.0-dev
 
@@ -25,3 +26,5 @@ addons:
     - gcc-4.8
 
 before_script: npm install -g standard
+
+script: dbus-launch -- npm test
