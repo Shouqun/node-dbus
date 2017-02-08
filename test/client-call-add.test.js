@@ -10,11 +10,11 @@ withService(function(err, done) {
 	var bus = dbus.getBus('session');
 
 	bus.getInterface('test.dbus.TestService', '/test/dbus/TestService', 'test.dbus.TestService.Interface1', function(err, iface) {
-		iface.Ping.timeout = 1000;
-		iface.Ping.finish = function(result) {
-			tap.equal(result, 'Pong!');
+		iface.Add.timeout = 1000;
+		iface.Add.finish = function(result) {
+			tap.equal(result, 310);
 			done();
 		};
-		iface.Ping();
+		iface.Add(109, 201);
 	});
 });

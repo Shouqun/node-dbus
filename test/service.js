@@ -10,8 +10,18 @@ var obj = service.createObject('/test/dbus/TestService');
 
 var iface1 = obj.createInterface('test.dbus.TestService.Interface1');
 
-iface1.addMethod('Ping', { out: DBus.Define(String) }, function(callback) {
-	callback('Pong!');
+iface1.addMethod('NoArgs', { out: DBus.Define(String) }, function(callback) {
+	callback('result!');
+});
+
+iface1.addMethod('Add', { in: [DBus.Define(Number), DBus.Define(Number)], out: DBus.Define(Number) }, function(n1, n2, callback) {
+	callback(n1 + n2);
+});
+
+iface1.addMethod('LongProcess', { out: DBus.Define(Number) }, function(callback) {
+	setTimeout(function() {
+		callback(0);
+	}, 5000);
 });
 
 var author = 'Fred Chien';
