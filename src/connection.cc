@@ -274,9 +274,6 @@ namespace Connection {
 
 		uv_unref((uv_handle_t *)bus->loop);
 
-		if (dbus_connection_get_is_connected(connection))
-			dbus_connection_close(connection);
-
 		dbus_connection_unref(connection);
 	}
 
