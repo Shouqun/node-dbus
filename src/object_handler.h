@@ -8,6 +8,7 @@ namespace ObjectHandler {
 	using namespace std;
 
 	NAN_METHOD(RegisterObjectPath);
+	NAN_METHOD(UnregisterObjectPath);
 	NAN_METHOD(SendMessageReply);
 	NAN_METHOD(SendErrorMessageReply);
 	NAN_METHOD(SetObjectHandler);

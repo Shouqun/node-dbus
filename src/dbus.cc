@@ -314,6 +314,7 @@ namespace NodeDBus {
 		Nan::SetMethod(exports, "callMethod", CallMethod);
 		Nan::SetMethod(exports, "requestName", RequestName);
 		Nan::SetMethod(exports, "registerObjectPath", ObjectHandler::RegisterObjectPath);
+		Nan::SetMethod(exports, "unregisterObjectPath", ObjectHandler::UnregisterObjectPath);
 		Nan::SetMethod(exports, "sendMessageReply", ObjectHandler::SendMessageReply);
 		Nan::SetMethod(exports, "sendErrorMessageReply", ObjectHandler::SendErrorMessageReply);
 		Nan::SetMethod(exports, "setObjectHandler", ObjectHandler::SetObjectHandler);

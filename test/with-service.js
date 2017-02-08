@@ -1,9 +1,9 @@
 var child_process = require('child_process');
 var path = require('path');
 
-function withService(callback) {
+function withService(name, callback) {
 	// Start a new process with our service code.
-	var p = child_process.fork(path.join(__dirname, 'service.js'));
+	var p = child_process.fork(path.join(__dirname, name));
 
 	var done = function() {
 		p.kill();
@@ -12,10 +12,12 @@ function withService(callback) {
 	done.process = p;
 
 	p.on('message', function(m) {
-		// When the service process has started and notifies us that it
-		// is ready, we call the callback so that the test code can
-		// proceed.
-		callback(null, done);
+		if (m.message === 'ready') {
+			// When the service process has started and notifies us that it
+			// is ready, we call the callback so that the test code can
+			// proceed.
+			callback(null, done);
+		}
 	});
 
 	p.on('exit', function() {
