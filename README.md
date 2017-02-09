@@ -60,6 +60,291 @@ environment variables manually (the actual bus address might be different):
 	process.env.DISPLAY = ':0';
 	process.env.DBUS_SESSION_BUS_ADDRESS = 'unix:path=/run/dbus/system_bus_socket';
 
+
+## API
+
+
+### DBus
+
+The root object of this module.
+
+#### `new DBus()`
+
+Create a new DBus instance.
+
+```
+var DBus = require('dbus')
+var dbus = new DBus()
+```
+
+#### `DBus.prototype.getBus(busName)`
+
+* busName `<string>`
+
+Connect to a bus. `busName` must be either `"system"` to connect to the system
+bus or `"session"` to connect to the session bus.
+
+Returns a `Bus`.
+
+```
+var bus = dbus.getBus('session');
+```
+
+#### `DBus.prototype.registerService(busName, serviceName)`
+
+* busName `<string>`
+* serviceName `<string>`
+
+Register a service on a specific bus. This allows the caller to create a DBus
+service.
+
+`busName` must be either `"system"` to create the service on the system bus, or
+`"session"` to create the service on the session bus. _Note: the system bus
+often has security requirements that need to be met before the service can be
+registered._
+
+Returns a `Service`.
+
+```
+var service = dbus.registerService('session', 'com.example.Library');
+```
+
+
+### Bus
+
+An active connection to one of DBus' buses.
+
+#### `Bus.prototype.getInterface(serviceName, objectPath, interfaceName, callback)`
+
+* serviceName `<string>` - The well-known name of the service that owns the object.
+* objectPath `<string>` - The path of the object.
+* interfaceName `<string>` - Which of the object's interfaces to retrieve.
+* callback `<function>`
+
+Get an existing object's interface from a well-known service.
+
+Once retrieved, `callback` will be called with either an error or with an
+`Interface`.
+
+```
+bus.getInterface('com.example.Library', '/com/example/Library/authors/DAdams', 'com.example.Library.Author1', function(err, interface) {
+    if (err) {
+        ...
+    }
+
+    // Do something with the interface
+});
+```
+
+
+### Interface
+
+#### `Interface.prototype.getProperty(propertyName, callback)`
+
+* propertyName `<string>` - The name of the property to get.
+* callback `<function>`
+
+Get the value of a property.
+
+Once retrieved `callback` will be called with either an error or with the value
+of the property.
+
+```
+interface.getProperty('Name', function(err, name) {
+});
+```
+
+#### `Interface.prototype.setProperty(propertyName, value, callback)`
+
+* propertyName `<string>` - The name of the property to get.
+* value `<any>` - The value of the property to set.
+* callback `<function>`
+
+Set the value of a property.
+
+Once set `callback` will be called with either an error or nothing.
+
+```
+interface.setProperty('Name', 'Douglas Adams', function(err) {
+});
+```
+
+#### `Interface.prototype.getProperties(callback)`
+
+* callback `<function>`
+
+Get the value of all of the properties of the interface.
+
+Once retrieved `callback` will be called with either an error or with an object
+where the keys are the names of the properties, and the values are the values
+of those properties.
+
+```
+interface.getProperties(function(err, properties) {
+    console.log(properties.Name);
+});
+```
+
+#### `Interface.prototype[methodName](...args, [options], callback)`
+
+* methodName `<string>` - The name of the method on the interface to call.
+* ...args `<any>` - The arguments that must be passed to the method.
+* options `<object>` - The options that can be set. This is optional.
+  * options.timeout `<number>` - The number of milliseconds to wait before the
+    request is timed out. This defaults to `-1`: don't time out.
+* callback `<function>`
+
+Call a method on the interface.
+
+Once executed, `callback` will be called with either an error or with the
+result of the method call.
+
+```
+interface.AddBook("The Hitchhiker's Guide to the Galaxy", { timeout: 1000 }, function(err, result) {
+})
+```
+
+
+### Service
+
+A dbus service created by the application.
+
+#### `Service.prototype.createObject(objectPath)`
+
+* objectPath `<string>` - The path of the object. E.g., `/com/example/ObjectName`
+
+Create an object that is exposed over DBus.
+
+Returns a `ServiceObject`.
+
+```
+var object = service.createObject('/com/example/Library/authors/DAdams');
+```
+
+#### `Service.prototype.removeObject(object)`
+
+* object `<ServiceObject>` - the service object that has been created
+
+Remove (or unexpose) an object that has been created.
+
+```
+service.removeObject(object);
+```
+
+### ServiceObject
+
+An object that is exposed over DBus.
+
+#### `ServiceObject.prototype.createInterface(interfaceName)`
+
+* interfaceName `<string>` - The name of the interface.
+
+Create an interface on an object.
+
+Returns a `ServiceInterface`.
+
+```
+var interface = object.createInterface('com.example.Library.Author1');
+```
+
+
+### ServiceInterface
+
+An interface for an object that is exposed over DBus.
+
+#### `ServiceInterface.prototype.addMethod(method, opts, handler)`
+
+* method `<string>` - The name of the method
+* opts `<object>` - Options for the method
+  * opts.in - The signature for parameters
+  * opts.out - The signature for what the method returns
+* handler `<function>` - The method handler
+
+Add a method that can be called over DBus.
+
+```
+interface.addMethod('AddBook', {
+	in: [DBus.Define(String), DBus.Define(Number)],
+	out: [DBus.Define(Number)]
+}, function(name, quality, callback) {
+	doSomeAsyncOperation(name, quality, function(err, result) {
+		if (err) {
+			return callback(err);
+		}
+
+		callback(result);
+	});
+});
+```
+
+#### `ServiceInterface.prototype.addProperty(name, opts)`
+
+* name `<string>` - The name of the property
+* opts `<object>`
+  * opts.type - The type of the property
+  * opts.getter - The function to retrieve the value
+  * opts.setter - The function to set the value (optional)
+
+Add a property that can be get, and/or optionally set, over DBus.
+
+```
+interface.addProperty('BooksWritten', {
+  type: DBus.Define(Number),
+  getter: function(callback) {
+    getNumberOfBooksForAuthor(function(err, bookCount) {
+      if(err) {
+        return callback(err);
+      }
+      callback(bookCount);
+    });
+  }
+}
+
+var name = 'Douglas Adams';
+interface.addProperty('Name', {
+  type: Dbus.Define(String),
+  getter: function(callback) {
+    callback(name);
+  }
+  setter: function(value, done) {
+    name = value;
+    done();
+  }
+}
+```
+
+#### `ServiceInterface.prototype.addSignal(name, opts)`
+
+* name `<string>` - The name of the signal
+* opts `<object>`
+  * types
+
+Create a DBus signal.
+
+```
+interface.addSignal('bookCreated', {
+  types: [DBus.Define(Object)]
+});
+```
+
+#### `ServiceInterface.prototype.emitSignal(name, ...values)`
+
+* name `<string>` - The name of the signal
+* values `<any>` - The values to emit
+
+Emit a signal
+
+```
+interface.emit('bookCreated', { name: "The Hitchhiker's Guide to the Galaxy" })
+```
+
+#### `ServiceInterface.prototype.update()`
+
+Save interface updates after making changes. After changes to the interface are
+made (via `addMethod`, `addProperty`, and `addSignal`), `update` must be called
+to ensure that other DBus clients can see the changes that were made.
+
+
 ## License 
 
 (The MIT License)
