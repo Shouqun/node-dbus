@@ -3,7 +3,7 @@ var tap = require('tap');
 var DBus = require('../');
 
 tap.plan(5);
-withService(function(err, done) {
+withService('service.js', function(err, done) {
 	if (err) throw err;
 
 	var dbus = new DBus();

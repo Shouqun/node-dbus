@@ -2,8 +2,8 @@ var withService = require('./with-service');
 var tap = require('tap');
 var DBus = require('../');
 
-tap.plan(2);
-withService(function(err, done) {
+tap.plan(1);
+withService('service.js', function(err, done) {
 	if (err) throw err;
 
 	var dbus = new DBus();
