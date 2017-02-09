@@ -10,15 +10,10 @@ withService('service.js', function(err, done) {
 	var bus = dbus.getBus('session');
 
 	bus.getInterface('test.dbus.TestService', '/test/dbus/TestService', 'test.dbus.TestService.Interface1', function(err, iface) {
-		iface.LongProcess.timeout = 1000;
-		iface.LongProcess.finish = function(result) {
-			tap.fail('This should not have succeeded');
+		iface.LongProcess({ timeout: 1000 }, function(err, result) {
+			tap.notSame(err, null);
+			tap.same(result, null);
 			done();
-		};
-		iface.LongProcess.error = function(err) {
-			tap.pass('The call timed out as expected');
-			done();
-		};
-		iface.LongProcess();
+		});
 	});
 });

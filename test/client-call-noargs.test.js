@@ -10,11 +10,15 @@ withService('service.js', function(err, done) {
 	var bus = dbus.getBus('session');
 
 	bus.getInterface('test.dbus.TestService', '/test/dbus/TestService', 'test.dbus.TestService.Interface1', function(err, iface) {
-		iface.NoArgs.timeout = 1000;
-		iface.NoArgs.finish = function(result) {
+		// With options
+		iface.NoArgs({ timeout: 1000 }, function(err, result) {
 			tap.equal(result, 'result!');
-			done();
-		};
-		iface.NoArgs();
+
+			// Without options
+			iface.NoArgs(function(err, result) {
+				tap.equal(result, 'result!');
+				done();
+			});
+		});
 	});
 });
