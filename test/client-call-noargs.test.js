@@ -2,7 +2,7 @@ var withService = require('./with-service');
 var tap = require('tap');
 var DBus = require('../');
 
-tap.plan(1);
+tap.plan(2);
 withService('service.js', function(err, done) {
 	if (err) throw err;
 
