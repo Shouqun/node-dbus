@@ -14,6 +14,7 @@ withService('service.js', function(err, done) {
 			tap.notSame(err, null);
 			tap.same(result, null);
 			done();
+			bus.disconnect();
 		});
 	});
 });

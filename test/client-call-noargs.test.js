@@ -18,6 +18,7 @@ withService('service.js', function(err, done) {
 			iface.NoArgs(function(err, result) {
 				tap.equal(result, 'result!');
 				done();
+				bus.disconnect();
 			});
 		});
 	});

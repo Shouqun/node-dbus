@@ -24,6 +24,7 @@ withService('service.js', function(err, done) {
 							tap.equal(props.Author, 'Douglas Adams');
 							tap.equal(props.URL, 'http://stem.mandice.org');
 							done();
+							bus.disconnect();
 						});
 					});
 				});
