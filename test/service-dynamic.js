@@ -16,7 +16,7 @@ process.on('message', function(msg) {
 		subiface.addProperty('Value', {
 			type: DBus.Define(String),
 			getter: function(callback) {
-				callback(value);
+				callback(null, value);
 			}
 		});
 		subiface.update();
