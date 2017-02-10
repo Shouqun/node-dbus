@@ -136,6 +136,12 @@ bus.getInterface('com.example.Library', '/com/example/Library/authors/DAdams', '
 });
 ```
 
+#### `Bus.prototype.disconnect()`
+
+Disconnect from DBus. This disconnection makes it so that Node isn't kept
+running based on this active connection. It also makes this bus, and all of its
+children (interfaces that have been retrieved, etc.) unusable.
+
 
 ### Interface
 
@@ -230,6 +236,13 @@ Remove (or unexpose) an object that has been created.
 ```
 service.removeObject(object);
 ```
+
+#### `Service.prototype.disconnect()`
+
+Disconnect from DBus. This disconnection makes it so that Node isn't kept
+running based on this active connection. It also disconnects all of the objects
+created by this service. 
+
 
 ### ServiceObject
 

@@ -6,7 +6,7 @@ function withService(name, callback) {
 	var p = child_process.fork(path.join(__dirname, name));
 
 	var done = function() {
-		p.kill();
+		p.send({ message: 'done' });
 	}
 
 	done.process = p;
@@ -18,15 +18,6 @@ function withService(name, callback) {
 			// proceed.
 			callback(null, done);
 		}
-	});
-
-	p.on('exit', function() {
-		// Because there is no way to shut down a connection, the node
-		// process keeps running after we're done with our testing. The
-		// way we handle this, then, is that when a test is done using
-		// the service, we kill the process that we started. And once
-		// that process has exited, we kill the current process.
-		process.exit();
 	});
 }
 

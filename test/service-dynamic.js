@@ -35,6 +35,10 @@ process.on('message', function(msg) {
 			process.send({ type: 'remove', value: value });
 		}
 	}
+	else if (msg.message === 'done') {
+		service.disconnect();
+		process.removeAllListeners('message');
+	}
 });
 
 process.send({ message: 'ready' });

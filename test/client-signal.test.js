@@ -13,6 +13,7 @@ withService('service.js', function(err, done) {
 		iface.on('pump', function() {
 			tap.pass('Signal received');
 			done();
+			bus.disconnect();
 		});
 	});
 });

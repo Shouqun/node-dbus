@@ -21,7 +21,7 @@ iface1.addMethod('Add', { in: [DBus.Define(Number), DBus.Define(Number)], out: D
 iface1.addMethod('LongProcess', { out: DBus.Define(Number) }, function(callback) {
 	setTimeout(function() {
 		callback(0);
-	}, 5000);
+	}, 5000).unref();
 });
 
 var author = 'Fred Chien';
@@ -57,10 +57,11 @@ iface1.addSignal('pump', {
 iface1.update();
 
 // Emit signal per one second
-setInterval(function() {
+var interval = setInterval(function() {
 	counter++;
 	iface1.emit('pump', counter);
 }, 1000);
+interval.unref();
 
 // Create second interface
 var iface2 = obj.createInterface('test.dbus.TestService.Interface2');
@@ -72,3 +73,10 @@ iface2.addMethod('Hello', { out: DBus.Define(String) }, function(callback) {
 iface2.update();
 
 process.send({ message: 'ready' });
+process.on('message', function(msg) {
+	if (msg.message === 'done') {
+		clearInterval(interval);
+		service.disconnect();
+		process.removeAllListeners('message');
+	}
+});

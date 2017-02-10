@@ -22,6 +22,7 @@ withService('service-dynamic.js', function(err, done) {
 							checkInterface(bus, '2', function(err, result) {
 								tap.equal(result, false);
 								done();
+								bus.disconnect();
 							});
 						});
 					});
