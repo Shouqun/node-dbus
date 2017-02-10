@@ -17,9 +17,7 @@ iface1.addMethod('Dummy', {}, function(callback) {
 });
 
 iface1.addMethod('MakeError', { out: DBus.Define(String) }, function(callback) {
-	var error = new Error('Some error');
-	error.dbusName = 'nodejs.dbus.ExampleService.ErrorTest';
-	callback(error);
+	callback(new DBus.Error('nodejs.dbus.ExampleService.ErrorTest', 'Some error'));
 });
 
 iface1.addMethod('Hello', { out: DBus.Define(String) }, function(callback) {

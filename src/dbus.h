@@ -20,8 +20,10 @@ namespace NodeDBus {
 //		Nan::Persistent<Function> callback;
 		Nan::Callback *callback;
 		DBusPendingCall *pending;
+		Nan::Callback *createError;
 
 		~DBusAsyncData() {
+			delete createError;
 			delete callback;
 		}
 	} DBusAsyncData;

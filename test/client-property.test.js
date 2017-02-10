@@ -21,7 +21,6 @@ withService('service.js', function(err, done) {
 						tap.equal(value, 'http://stem.mandice.org');
 
 						iface.getProperties(function(err, props) {
-							console.log(props);
 							tap.equal(props.Author, 'Douglas Adams');
 							tap.equal(props.URL, 'http://stem.mandice.org');
 							done();

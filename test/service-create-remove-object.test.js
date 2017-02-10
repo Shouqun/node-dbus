@@ -56,7 +56,7 @@ function checkInterface(bus, value, callback) {
 				if (!err) {
 					return callback(null, true);
 				}
-				if (/UnknownMethod/.test(err.message)) {
+				if (err instanceof DBus.Error && /UnknownMethod/.test(err.dbusName)) {
 					// This object doesn't exist. We're good.
 					return callback(null, false);
 				}

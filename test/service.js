@@ -32,8 +32,7 @@ iface1.addMethod('ThrowsError', { out: DBus.Define(Number) }, function(callback)
 
 iface1.addMethod('ThrowsCustomError', { out: DBus.Define(Number) }, function(callback) {
 	setTimeout(function() {
-		var error = new Error('This is an error thrown from the service');
-		error.dbusName = 'test.dbus.TestService.Error';
+		var error = new DBus.Error('test.dbus.TestService.Error', 'This is an error thrown from the service');
 		callback(error);
 	}, 100);
 });
