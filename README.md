@@ -358,6 +358,28 @@ made (via `addMethod`, `addProperty`, and `addSignal`), `update` must be called
 to ensure that other DBus clients can see the changes that were made.
 
 
+### DBus.Error
+
+A DBus-specific error
+
+#### `new DBus.Error(name, message)`
+
+* name `<string>` - A valid DBus Error name, according to the [specification][spec]
+* message `<string>` - A human readable message
+
+Create a new error. The name must be a valid error name.
+
+```
+throw new DBus.Error('com.example.Library.Error.BookExistsError', 'The book already exists');
+```
+
+#### `dbusError.dbusName`
+
+The DBus Error name of the error. When a DBus.Error is created, its message is
+set to the human-readable error message. The `dbusName` property is set to the
+name (according to the DBus Spec).
+
+
 ## License 
 
 (The MIT License)
@@ -383,3 +405,4 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+[spec]: https://dbus.freedesktop.org/doc/dbus-specification.html

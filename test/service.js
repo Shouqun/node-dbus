@@ -24,6 +24,19 @@ iface1.addMethod('LongProcess', { out: DBus.Define(Number) }, function(callback)
 	}, 5000).unref();
 });
 
+iface1.addMethod('ThrowsError', { out: DBus.Define(Number) }, function(callback) {
+	setTimeout(function() {
+		callback(new Error('This is an error thrown from the service'));
+	}, 100);
+});
+
+iface1.addMethod('ThrowsCustomError', { out: DBus.Define(Number) }, function(callback) {
+	setTimeout(function() {
+		var error = new DBus.Error('test.dbus.TestService.Error', 'This is an error thrown from the service');
+		callback(error);
+	}, 100);
+});
+
 var author = 'Fred Chien';
 iface1.addProperty('Author', {
 	type: DBus.Define(String),
@@ -43,6 +56,14 @@ iface1.addProperty('URL', {
 	type: DBus.Define(String),
 	getter: function(callback) {
 		callback(url);
+	}
+});
+
+// Read-only property
+iface1.addProperty('ErrorProperty', {
+	type: DBus.Define(String),
+	getter: function(callback) {
+		callback(new Error('This is an error thrown from the service'));
 	}
 });
 
