@@ -54,8 +54,8 @@ Work your way through other examples to explore supported functionality.
 
 ## Note on systems without X11
 If no X server is running, the module fails when attempting to obtain a D-Bus
-connection at `dbus._dbus.getBus()`. This can be remedied by setting two
-environment variables manually (the actual bus address might be different):
+connection at `DBus.getBus()`. This can be remedied by setting two environment
+variables manually (the actual bus address might be different):
 
 	process.env.DISPLAY = ':0';
 	process.env.DBUS_SESSION_BUS_ADDRESS = 'unix:path=/run/dbus/system_bus_socket';
@@ -68,16 +68,7 @@ environment variables manually (the actual bus address might be different):
 
 The root object of this module.
 
-#### `new DBus()`
-
-Create a new DBus instance.
-
-```
-var DBus = require('dbus')
-var dbus = new DBus()
-```
-
-#### `DBus.prototype.getBus(busName)`
+#### `DBus.getBus(busName)`
 
 * busName `<string>`
 
@@ -87,10 +78,10 @@ bus or `"session"` to connect to the session bus.
 Returns a `Bus`.
 
 ```
-var bus = dbus.getBus('session');
+var bus = DBus.getBus('session');
 ```
 
-#### `DBus.prototype.registerService(busName, serviceName)`
+#### `DBus.registerService(busName, serviceName)`
 
 * busName `<string>`
 * serviceName `<string>`
@@ -106,8 +97,25 @@ registered._
 Returns a `Service`.
 
 ```
-var service = dbus.registerService('session', 'com.example.Library');
+var service = DBus.registerService('session', 'com.example.Library');
 ```
+
+#### *DEPRECATED* `new DBus()`
+
+Create a new DBus instance.
+
+```
+var DBus = require('dbus')
+var dbus = new DBus()
+```
+
+#### *DEPRECATED* `DBus.prototype.getBus(busName)`
+
+Use `DBus.getBus(busName)`.
+
+#### *DEPRECATED* `DBus.prototype.registerService(busName, serviceName)`
+
+Use `DBus.registerService(busName, serviceName)`
 
 
 ### Bus

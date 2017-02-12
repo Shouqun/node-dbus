@@ -3,8 +3,7 @@ var DBus = require('../');
 
 tap.plan(1);
 
-var dbus = new DBus();
-var client = dbus.getBus('session');
+var client = DBus.getBus('session');
 
 var timeout = setTimeout(function() {
 	tap.fail('Should have disconnected by now');
@@ -18,7 +17,7 @@ setTimeout(function() {
 }, 50);
 
 setTimeout(function() {
-	var service = dbus.registerService('session', 'test.dbus.TestService');
+	var service = DBus.registerService('session', 'test.dbus.TestService');
 	service.createObject('/test/dbus/TestService');
 	setImmediate(function() {
 		service.disconnect();

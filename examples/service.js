@@ -1,9 +1,7 @@
 var DBus = require('../');
 
-var dbus = new DBus();
-
 // Create a new service, object and interface
-var service = dbus.registerService('session', 'nodejs.dbus.ExampleService');
+var service = DBus.registerService('session', 'nodejs.dbus.ExampleService');
 var obj = service.createObject('/nodejs/dbus/ExampleService');
 
 // Create interface

@@ -3,8 +3,7 @@ var DBus = require('../');
 
 tap.plan(2);
 
-var dbus = new DBus();
-var service = dbus.registerService('session', 'test.dbus.TestService');
+var service = DBus.registerService('session', 'test.dbus.TestService');
 var object = service.createObject('/test/dbus/TestService');
 var iface = object.createInterface('test.dbus.TestService.Interface1');
 
