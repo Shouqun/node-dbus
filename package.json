@@ -1,10 +1,11 @@
 {
   "name": "dbus",
-  "version": "0.2.22",
+  "version": "1.0.0",
   "description": "A D-Bus binding for Node",
   "author": "Shouqun Liu <liushouqun@gmail.com>",
   "contributors": [
-    "Fred Chien <cfsghost@gmail.com>"
+    "Fred Chien <cfsghost@gmail.com>",
+    "Bryan Burgers <bryan@burgers.io>"
   ],
   "license": "MIT",
   "repository": {
@@ -12,7 +13,7 @@
     "url": "git://github.com/Shouqun/node-dbus.git"
   },
   "engines": {
-    "node": ">= 0.8.0"
+    "node": ">= 0.12.0"
   },
   "main": "./lib/dbus",
   "scripts": {
