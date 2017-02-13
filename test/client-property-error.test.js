@@ -8,7 +8,7 @@ withService('service.js', function(err, done) {
 
 	var bus = DBus.getBus('session');
 
-	bus.getInterface('test.dbus.TestService', '/test/dbus/TestService', 'test.dbus.TestService.Interface1', function(err, iface) {
+	bus.getInterface('test.dbus.TestService', '/test/dbus/TestService', 'test.dbus.TestService.ErrorInterface', function(err, iface) {
 		iface.getProperty('ErrorProperty', function(err, value) {
 			tap.notSame(err, null);
 			tap.same(value, null);
