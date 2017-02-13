@@ -6,8 +6,7 @@ tap.plan(10);
 withService('service.js', function(err, done) {
 	if (err) throw err;
 
-	var dbus = new DBus();
-	var bus = dbus.getBus('session');
+	var bus = DBus.getBus('session');
 
 	bus.getInterface('test.dbus.TestService', '/test/dbus/TestService', 'test.dbus.TestService.ErrorInterface', function(err, iface) {
 		iface.ThrowsError({ timeout: 1000 }, function(err, result) {

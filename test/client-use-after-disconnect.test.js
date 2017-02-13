@@ -1,8 +1,7 @@
 var tap = require('tap');
 var DBus = require('../');
 
-var dbus = new DBus();
-var bus = dbus.getBus('session');
+var bus = DBus.getBus('session');
 
 tap.plan(11);
 

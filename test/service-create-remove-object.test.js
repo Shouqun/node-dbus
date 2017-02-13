@@ -6,8 +6,7 @@ tap.plan(4);
 withService('service-dynamic.js', function(err, done) {
 	if (err) throw err;
 
-	var dbus = new DBus();
-	var bus = dbus.getBus('session');
+	var bus = DBus.getBus('session');
 	var process = done.process;
 
 	addObject(process, '1', function() {

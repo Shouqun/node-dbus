@@ -1,8 +1,6 @@
 var DBus = require('../');
 
-var dbus = new DBus();
-
-var bus1 = dbus.getBus('session');
+var bus1 = DBus.getBus('session');
 
 bus1.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'nodejs.dbus.ExampleService.Interface1', function(err, iface) {
 
@@ -12,7 +10,7 @@ bus1.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', '
 
 });
 
-var bus2 = dbus.getBus('session');
+var bus2 = DBus.getBus('session');
 
 bus2.getInterface('nodejs.dbus.ExampleService', '/nodejs/dbus/ExampleService', 'nodejs.dbus.ExampleService.Interface1', function(err, iface) {
 

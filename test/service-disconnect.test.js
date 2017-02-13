@@ -3,8 +3,7 @@ var DBus = require('../');
 
 tap.plan(1);
 
-var dbus = new DBus();
-var service = dbus.registerService('session', 'test.dbus.TestService');
+var service = DBus.registerService('session', 'test.dbus.TestService');
 service.createObject('/test/dbus/TestService');
 
 var timeout = setTimeout(function() {
