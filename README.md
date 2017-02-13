@@ -13,6 +13,12 @@ $ npm install dbus
 ## How To Build
 To build, do: `node-gyp configure build` or `npm install`.
 
+## Migrating to version 1.0
+
+The API changed between version 0.2.21 and version 1.0.0. See
+[migrating][migrating] for information on how to migrate your application to
+the new API.
+
 ## Dependencies
 
 ### General
@@ -414,3 +420,4 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 [spec]: https://dbus.freedesktop.org/doc/dbus-specification.html
+[migrating]: MIGRATING.md
