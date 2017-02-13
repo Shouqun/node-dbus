@@ -11,42 +11,33 @@ var obj = service.createObject('/test/dbus/TestService');
 var iface1 = obj.createInterface('test.dbus.TestService.Interface1');
 
 iface1.addMethod('NoArgs', { out: DBus.Define(String) }, function(callback) {
-	callback('result!');
+	callback(null, 'result!');
 });
 
 iface1.addMethod('Add', { in: [DBus.Define(Number), DBus.Define(Number)], out: DBus.Define(Number) }, function(n1, n2, callback) {
-	callback(n1 + n2);
+	callback(null, n1 + n2);
+});
+
+iface1.addMethod('Object', { in: [DBus.Define(Object)], out: DBus.Define(Object) }, function(obj, callback) {
+	callback(null, obj);
 });
 
 iface1.addMethod('LongProcess', { out: DBus.Define(Number) }, function(callback) {
 	setTimeout(function() {
-		callback(0);
+		callback(null, 0);
 	}, 5000).unref();
-});
-
-iface1.addMethod('ThrowsError', { out: DBus.Define(Number) }, function(callback) {
-	setTimeout(function() {
-		callback(new Error('This is an error thrown from the service'));
-	}, 100);
-});
-
-iface1.addMethod('ThrowsCustomError', { out: DBus.Define(Number) }, function(callback) {
-	setTimeout(function() {
-		var error = new DBus.Error('test.dbus.TestService.Error', 'This is an error thrown from the service');
-		callback(error);
-	}, 100);
 });
 
 var author = 'Fred Chien';
 iface1.addProperty('Author', {
 	type: DBus.Define(String),
 	getter: function(callback) {
-		callback(author);
+		callback(null, author);
 	},
-	setter: function(value, complete) {
+	setter: function(value, callback) {
 		author = value;
 
-		complete();
+		callback();
 	}
 });
 
@@ -55,15 +46,7 @@ var url = 'http://stem.mandice.org';
 iface1.addProperty('URL', {
 	type: DBus.Define(String),
 	getter: function(callback) {
-		callback(url);
-	}
-});
-
-// Read-only property
-iface1.addProperty('ErrorProperty', {
-	type: DBus.Define(String),
-	getter: function(callback) {
-		callback(new Error('This is an error thrown from the service'));
+		callback(null, url);
 	}
 });
 
@@ -84,11 +67,35 @@ var interval = setInterval(function() {
 }, 1000);
 interval.unref();
 
+var errors = obj.createInterface('test.dbus.TestService.ErrorInterface');
+
+errors.addMethod('ThrowsError', { out: DBus.Define(Number) }, function(callback) {
+	setTimeout(function() {
+		callback(new Error('This is an error thrown from the service'));
+	}, 100);
+});
+
+errors.addMethod('ThrowsCustomError', { out: DBus.Define(Number) }, function(callback) {
+	setTimeout(function() {
+		var error = new DBus.Error('test.dbus.TestService.Error', 'This is an error thrown from the service');
+		callback(error);
+	}, 100);
+});
+
+errors.addProperty('ErrorProperty', {
+	type: DBus.Define(String),
+	getter: function(callback) {
+		callback(new Error('This is an error thrown from the service'));
+	}
+});
+
+errors.update();
+
 // Create second interface
 var iface2 = obj.createInterface('test.dbus.TestService.Interface2');
 
 iface2.addMethod('Hello', { out: DBus.Define(String) }, function(callback) {
-	callback('Hello There!');
+	callback(null, 'Hello There!');
 });
 
 iface2.update();
