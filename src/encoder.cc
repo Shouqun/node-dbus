@@ -151,17 +151,15 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 		return "";
 	}
 
-	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, const char *signature)
+	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, DBusSignatureIter *siter)
 	{
 		// printf("EncodeObject %s\n",signature);
 		// printf("%p", value);
 		Nan::HandleScope scope;
-		DBusSignatureIter siter;
 		int type;
 
 		// Get type of current value
-		dbus_signature_iter_init(&siter, signature);
-		type = dbus_signature_iter_get_current_type(&siter);
+		type = dbus_signature_iter_get_current_type(siter);
 
 		switch(type) {
 		case DBUS_TYPE_INVALID:
@@ -319,7 +317,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 			char *array_sig = NULL;
 
 			// Getting signature of array object
-			dbus_signature_iter_recurse(&siter, &arraySiter);
+			dbus_signature_iter_recurse(siter, &arraySiter);
 			array_sig = dbus_signature_iter_get_signature(&arraySiter);
 
 			// Open array container to process elements in there
@@ -328,20 +326,11 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 				printf("Can't open container for Array type\n");
 				return false; 
 			}
+			dbus_free(array_sig);
 
 			// It's a dictionary
-			if (dbus_signature_iter_get_element_type(&siter) == DBUS_TYPE_DICT_ENTRY) {
-
-				dbus_free(array_sig);
-
+			if (dbus_signature_iter_get_element_type(siter) == DBUS_TYPE_DICT_ENTRY) {
 				Local<Object> value_object = value->ToObject();
-				DBusSignatureIter dictSubSiter;
-
-				// Getting sub-signature object
-				dbus_signature_iter_recurse(&arraySiter, &dictSubSiter);
-				char *keySig = dbus_signature_iter_get_signature(&dictSubSiter);
-				dbus_signature_iter_next(&dictSubSiter);
-				char *valSig = dbus_signature_iter_get_signature(&dictSubSiter);
 
 				// process each elements
 				Local<Array> prop_names = value_object->GetPropertyNames();
@@ -349,7 +338,11 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 
 				bool failed = false;
 				for (unsigned int i = 0; i < len; ++i) {
+					DBusSignatureIter dictSubSiter;
 					DBusMessageIter dict_iter;
+					
+					// Getting sub-signature object
+					dbus_signature_iter_recurse(&arraySiter, &dictSubSiter);
 
 					// Open dict entry container
 					if (!dbus_message_iter_open_container(&subIter, DBUS_TYPE_DICT_ENTRY, NULL, &dict_iter)) {
@@ -363,7 +356,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 					Local<Value> prop_value = value_object->Get(prop_key);
 
 					// Append the key
-					if (!EncodeObject(prop_key, &dict_iter, keySig)) {
+					if (!EncodeObject(prop_key, &dict_iter, &dictSubSiter)) {
 						dbus_message_iter_close_container(&subIter, &dict_iter); 
 						printf("Failed to encode element of dictionary\n");
 						failed = true;
@@ -371,7 +364,8 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 					}
 
 					// Append the value
-					if (!EncodeObject(prop_value, &dict_iter, valSig)) {
+					dbus_signature_iter_next(&dictSubSiter);
+					if (!EncodeObject(prop_value, &dict_iter, &dictSubSiter)) {
 						dbus_message_iter_close_container(&subIter, &dict_iter); 
 						printf("Failed to encode element of dictionary\n");
 						failed = true;
@@ -381,8 +375,6 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 					dbus_message_iter_close_container(&subIter, &dict_iter); 
 				}
 
-				dbus_free(keySig);
-				dbus_free(valSig);
 				dbus_message_iter_close_container(iter, &subIter);
 
 				if (failed) 
@@ -400,12 +392,11 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 			Local<Array> arrayData = Local<Array>::Cast(value);
 			for (unsigned int i = 0; i < arrayData->Length(); ++i) {
 				Local<Value> arrayItem = arrayData->Get(i);
-				if (!EncodeObject(arrayItem, &subIter, array_sig))
+				if (!EncodeObject(arrayItem, &subIter, &arraySiter))
 					break;
 			}
 
 			dbus_message_iter_close_container(iter, &subIter);
-			dbus_free(array_sig);
 
 			break;
 		}
@@ -413,6 +404,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 		case DBUS_TYPE_VARIANT:
 		{
 			DBusMessageIter subIter;
+			DBusSignatureIter subSiter;
 
 			string str_sig = GetSignatureFromV8Type(value);
 			const char *var_sig = str_sig.c_str();
@@ -422,7 +414,8 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 				return false;
 			}
 
-			if (!EncodeObject(value, &subIter, var_sig)) { 
+			dbus_signature_iter_init(&subSiter, var_sig);
+			if (!EncodeObject(value, &subIter, &subSiter)) { 
 				dbus_message_iter_close_container(iter, &subIter);
 				return false;
 			}
@@ -446,7 +439,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 			Local<Object> value_object = value->ToObject();
 
 			// Getting sub-signature object
-			dbus_signature_iter_recurse(&siter, &structSiter);
+			dbus_signature_iter_recurse(siter, &structSiter);
 
 			// process each elements
 			Local<Array> prop_names = value_object->GetPropertyNames();
@@ -454,17 +447,12 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 
 			for (unsigned int i = 0; i < len; ++i) {
 
-				char *sig = dbus_signature_iter_get_signature(&structSiter);
-
 				Local<Value> prop_key = prop_names->Get(i);
 
-				if (!EncodeObject(value_object->Get(prop_key), &subIter, sig)) {
-					dbus_free(sig);
+				if (!EncodeObject(value_object->Get(prop_key), &subIter, &structSiter)) {
 					printf("Failed to encode element of dictionary\n");
 					return false;
 				}
-
-				dbus_free(sig);
 
 				if (!dbus_signature_iter_next(&structSiter))
 					break;

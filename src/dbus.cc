@@ -214,9 +214,11 @@ namespace NodeDBus {
 				dbus_signature_iter_init(&siter, sig);
 				for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 					char *arg_sig = dbus_signature_iter_get_signature(&siter);
+					DBusSignatureIter subSiter;
 					Local<Value> arg = argument_arr->Get(i);
 
-					if (!Encoder::EncodeObject(arg, &iter, arg_sig)) {
+					dbus_signature_iter_init(&subSiter, arg_sig);
+					if (!Encoder::EncodeObject(arg, &iter, &subSiter)) {
 						dbus_free(arg_sig);
 						break;
 					}

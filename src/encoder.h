@@ -8,7 +8,7 @@ namespace Encoder {
 	using namespace std;
 
 	string GetSignatureFromV8Type(Local<Value>& value);
-	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, const char *signature);
+	bool EncodeObject(Local<Value> value, DBusMessageIter *iter, DBusSignatureIter *siter);
 }
 
 #endif

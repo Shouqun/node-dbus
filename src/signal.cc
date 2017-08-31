@@ -41,6 +41,8 @@ namespace Signal {
 	}
 
 	NAN_METHOD(EmitSignal) {
+		DBusError error;
+
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First parameter must be an object");
 		}
@@ -80,6 +82,9 @@ namespace Signal {
 		char *signal = strdup(*String::Utf8Value(info[3]->ToString()));
 		message = dbus_message_new_signal(path, interface, signal);
 
+		// Initializing error handler
+		dbus_error_init(&error);
+
 		// Preparing message
 		dbus_message_iter_init_append(message, &iter);
 
@@ -88,10 +93,15 @@ namespace Signal {
 		Local<Array> signatures = Local<Array>::Cast(info[5]);
 		for (unsigned int i = 0; i < arguments->Length(); ++i) {
 			Local<Value> arg = arguments->Get(i);
-
+			DBusSignatureIter siter;
+			
 			char *sig = strdup(*String::Utf8Value(signatures->Get(i)->ToString()));
-
-			if (!Encoder::EncodeObject(arg, &iter, sig)) {
+			if (!dbus_signature_validate(sig, &error)) {
+				return Nan::ThrowError(error.message);
+			}
+			
+			dbus_signature_iter_init(&siter, sig);
+			if (!Encoder::EncodeObject(arg, &iter, &siter)) {
 				dbus_free(sig);
 				printf("Failed to encode arguments of signal\n");
 				break;
