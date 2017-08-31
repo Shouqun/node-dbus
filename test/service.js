@@ -20,6 +20,10 @@ iface1.addMethod('Object', { in: [DBus.Define(Object)], out: DBus.Define(Object)
 	callback(null, obj);
 });
 
+iface1.addMethod('IntDict', { in: [{ type: 'a{ys}' }], out: { type: 'ay' }}, function (dict, callback) {
+	callback(null, Object.keys(dict).sort());
+})
+
 iface1.addMethod('LongProcess', { out: DBus.Define(Number) }, function(callback) {
 	setTimeout(function() {
 		callback(null, 0);

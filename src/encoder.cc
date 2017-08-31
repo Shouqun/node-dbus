@@ -339,8 +339,9 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 
 				// Getting sub-signature object
 				dbus_signature_iter_recurse(&arraySiter, &dictSubSiter);
+				char *keySig = dbus_signature_iter_get_signature(&dictSubSiter);
 				dbus_signature_iter_next(&dictSubSiter);
-				char *sig = dbus_signature_iter_get_signature(&dictSubSiter);
+				char *valSig = dbus_signature_iter_get_signature(&dictSubSiter);
 
 				// process each elements
 				Local<Array> prop_names = value_object->GetPropertyNames();
@@ -362,13 +363,15 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 					Local<Value> prop_value = value_object->Get(prop_key);
 
 					// Append the key
-					char *prop_key_str = strdup(*String::Utf8Value(prop_key->ToString()));
-					// printf("key: %s\n", prop_key_str);
-					dbus_message_iter_append_basic(&dict_iter, DBUS_TYPE_STRING, &prop_key_str);
-					dbus_free(prop_key_str);
+					if (!EncodeObject(prop_key, &dict_iter, keySig)) {
+						dbus_message_iter_close_container(&subIter, &dict_iter); 
+						printf("Failed to encode element of dictionary\n");
+						failed = true;
+						break;
+					}
 
 					// Append the value
-					if (!EncodeObject(prop_value, &dict_iter, sig)) {
+					if (!EncodeObject(prop_value, &dict_iter, valSig)) {
 						dbus_message_iter_close_container(&subIter, &dict_iter); 
 						printf("Failed to encode element of dictionary\n");
 						failed = true;
@@ -378,7 +381,8 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 					dbus_message_iter_close_container(&subIter, &dict_iter); 
 				}
 
-				dbus_free(sig);
+				dbus_free(keySig);
+				dbus_free(valSig);
 				dbus_message_iter_close_container(iter, &subIter);
 
 				if (failed) 
