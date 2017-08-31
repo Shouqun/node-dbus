@@ -196,7 +196,7 @@ namespace NodeDBus {
 		// Preparing method arguments
 		if (info[7]->IsObject()) {
 			DBusMessageIter iter;
-			DBusSignatureIter siter;
+			DBusSignatureIter siter, concrete_siter;
 
 			Local<Array> argument_arr = Local<Array>::Cast(info[7]);
 			if (argument_arr->Length() > 0) {
@@ -205,31 +205,71 @@ namespace NodeDBus {
 				dbus_message_iter_init_append(message, &iter); 
 
 				// Initializing signature
-				char *sig = strdup(*String::Utf8Value(info[5]->ToString()));
+				char *sig = NULL, *concrete_sig = NULL;
+				if (info[5]->IsObject())
+				{
+					Local<Object> obj(info[5]->ToObject());
+					
+					Local<Value> typeKey(Nan::New("type").ToLocalChecked());
+					Nan::MaybeLocal<Value> mb_sig(Nan::Get(obj, typeKey));
+					sig = strdup(*String::Utf8Value(mb_sig.ToLocalChecked()->ToString()));
+					
+					Local<Value> concreteTypeKey(Nan::New("concrete_type").ToLocalChecked());
+					Nan::MaybeLocal<Value> mb_concrete_sig(Nan::Get(obj, concreteTypeKey));
+					Local<Value> concrete_sig_value;
+					if (mb_concrete_sig.ToLocal(&concrete_sig_value))
+					{
+						concrete_sig = strdup(*String::Utf8Value(concrete_sig_value->ToString()));
+					}
+				}
+				else
+				{
+					sig = strdup(*String::Utf8Value(info[5]->ToString()));
+				}
+				
+				if (concrete_sig == NULL) {
+					concrete_sig = strdup(sig);
+				}
+
 				if (!dbus_signature_validate(sig, &error)) {
+					return Nan::ThrowError(error.message);
+				}
+
+				if (!dbus_signature_validate(concrete_sig, &error)) {
 					return Nan::ThrowError(error.message);
 				}
 
 				// Getting all signatures
 				dbus_signature_iter_init(&siter, sig);
+				dbus_signature_iter_init(&concrete_siter, concrete_sig);
 				for (unsigned int i = 0; i < argument_arr->Length(); ++i) {
 					char *arg_sig = dbus_signature_iter_get_signature(&siter);
-					DBusSignatureIter subSiter;
+					char *arg_concrete_sig = dbus_signature_iter_get_signature(&concrete_siter);
+					
+					DBusSignatureIter item_siter, item_concrete_siter;
 					Local<Value> arg = argument_arr->Get(i);
 
-					dbus_signature_iter_init(&subSiter, arg_sig);
-					if (!Encoder::EncodeObject(arg, &iter, &subSiter)) {
+					dbus_signature_iter_init(&item_siter, arg_sig);
+					dbus_signature_iter_init(&item_concrete_siter, arg_concrete_sig);
+					
+					if (!Encoder::EncodeObject(arg, &iter, &item_siter, &item_concrete_siter)) {
 						dbus_free(arg_sig);
+						dbus_free(arg_concrete_sig);
 						break;
 					}
 
 					dbus_free(arg_sig);
+					dbus_free(arg_concrete_sig);
 
 					if (!dbus_signature_iter_next(&siter))
+						break;
+					
+					if (!dbus_signature_iter_next(&concrete_siter))
 						break;
 				}
 
 				dbus_free(sig);
+				dbus_free(concrete_sig);
 			}
 		}
 
