@@ -77,13 +77,15 @@ namespace ObjectHandler {
 	{
 		Nan::HandleScope scope;
 		DBusMessageIter iter;
+		DBusSignatureIter siter;
 		DBusMessage *reply;
 		dbus_uint32_t serial = 0;
 
 		reply = dbus_message_new_method_return(message);
 
 		dbus_message_iter_init_append(reply, &iter);
-		if (!Encoder::EncodeObject(reply_value, &iter, signature)) {
+		dbus_signature_iter_init(&siter, signature);
+		if (!Encoder::EncodeObject(reply_value, &iter, &siter)) {
 			printf("Failed to encode reply value\n");
 		}
 
