@@ -37,12 +37,11 @@
           'include_dirs': [
             '<!@(pkg-config --cflags-only-I dbus-1 | sed s/-I//g)'
           ],
-          'ldflags': [
-            '<!@(pkg-config  --libs-only-L --libs-only-other dbus-1)'
-          ],
-          'libraries': [
-            '<!@(pkg-config  --libs-only-l --libs-only-other dbus-1)'
-          ]
+          'link_settings': {
+            'libraries': [
+                '<!@(pkg-config  --libs-only-L --libs-only-l --libs-only-other dbus-1)'
+            ]
+          }
         }]
       ]
     }
