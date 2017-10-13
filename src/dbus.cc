@@ -310,6 +310,8 @@ namespace NodeDBus {
 	}
 
 	NAN_METHOD(RequestName) {
+		DBusError error;
+
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First argument must be an object (bus)");
 		}
@@ -321,12 +323,19 @@ namespace NodeDBus {
 		BusObject *bus = static_cast<BusObject *>(Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
 		char *service_name = strdup(*String::Utf8Value(info[1]->ToString()));
 
+		dbus_error_init(&error);
+
 		// Request bus name
-		dbus_bus_request_name(bus->connection, service_name, 0, NULL);
+		dbus_bus_request_name(bus->connection, service_name, 0, &error);
 		dbus_connection_flush(bus->connection);
 
-		dbus_free(service_name);
+		if (dbus_error_is_set(&error)) {
+			dbus_free(service_name);
 
+			return Nan::ThrowError(error.message);
+		}
+
+		dbus_free(service_name);
 		return;
 	}
 
