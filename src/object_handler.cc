@@ -99,6 +99,7 @@ namespace ObjectHandler {
 	DBusObjectPathVTable vtable = CreateVTable();
 
 	NAN_METHOD(RegisterObjectPath) {
+		DBusError error;
 		if (!info[0]->IsObject()) {
 			return Nan::ThrowTypeError("First parameter must be an object (bus)");
 		}
@@ -111,14 +112,16 @@ namespace ObjectHandler {
 
 		// Register object path
 		char *object_path = strdup(*Nan::Utf8String(info[1]));
-		dbus_bool_t ret = dbus_connection_register_object_path(bus->connection,
+		dbus_error_init(&error);
+		dbus_bool_t ret = dbus_connection_try_register_object_path(bus->connection,
 			object_path,
 			&vtable,
-			NULL);
+			NULL,
+			&error);
 		dbus_connection_flush(bus->connection);
 		dbus_free(object_path);
-		if (!ret) {
-			return Nan::ThrowError("Out of Memory");
+		if (dbus_error_is_set(&error)) {
+			return Nan::ThrowError(error.message);
 		}
 
 		return;
