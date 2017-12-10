@@ -268,6 +268,7 @@ typedef bool (*CheckTypeCallback) (Local<Value>& value, const char* sig);
 			break;
 		}
 
+		case DBUS_TYPE_UNIX_FD:
 		case DBUS_TYPE_INT32:
 		{
 			dbus_int32_t data = value->Int32Value();

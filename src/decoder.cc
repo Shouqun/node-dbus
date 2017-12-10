@@ -42,6 +42,7 @@ namespace Decoder {
 		DBUS_BASIC_TYPE(DBUS_TYPE_INT64, dbus_int64_t, 0, Number)
 		DBUS_BASIC_TYPE(DBUS_TYPE_UINT64, dbus_uint64_t, 0, Number)
 		DBUS_BASIC_TYPE(DBUS_TYPE_DOUBLE, double, 0, Number)
+		DBUS_BASIC_TYPE(DBUS_TYPE_UNIX_FD, dbus_uint32_t, 0, Number)
 #undef DBUS_BASIC_TYPE
 
 		case DBUS_TYPE_OBJECT_PATH:
