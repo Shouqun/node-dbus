@@ -23,49 +23,68 @@ the new API.
 
 ### General
 
-**Node-gyp**  
-`$ npm install -g node-gyp`  
-[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
+* **Node-gyp**
 
-**libdbus**  
-`$ sudo apt-get install libdbus-1-dev`  
-or equivalent for your system
+	```bash
+	$ npm install -g node-gyp
+	```
 
-**glib2.0**  
-`$ sudo apt-get install libglib2.0-dev`  
-or equivalent for your system
+	[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
+
+* **libdbus**
+
+	```bash
+	$ sudo apt-get install libdbus-1-dev
+	```
+
+	or equivalent for your system
+
+* **glib2.0**
+
+	```bash
+	$ sudo apt-get install libglib2.0-dev
+	```
+	
+	or equivalent for your system
 
 ### MacOS with MacPorts/HomeBrew
 
-**Node-gyp**  
-`$ npm install -g node-gyp`  
-[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
+* **Node-gyp**
 
-**libdbus**  
-MacPorts: `$ sudo port install pkg-config dbus`
-HomeBrew: `$ sudo brew install pkg-config dbus`
+	```bash
+	$ npm install -g node-gyp
+	```
 
-**glib2.0**  
-MacPorts: `$ sudo port install glib2`
-HomeBrew: `$ sudo brew install glib`
+	[https://www.npmjs.com/package/node-gyp](https://www.npmjs.com/package/node-gyp)
+
+* **libdbus**  
+	MacPorts: `$ sudo port install pkg-config dbus`
+	HomeBrew: `$ sudo brew install pkg-config dbus`
+
+* **glib2.0**  
+	MacPorts: `$ sudo port install glib2`
+	HomeBrew: `$ sudo brew install glib`
 
 ## Getting Started
+
 Best way to get started is by looking at the examples. After the build:
 
 1. Navigate to `path/to/dbus/examples` folder
-1. Run `node service.js &`
-1. Run  `node hello.js`
+2. Run `node service.js &`
+3. Run  `node hello.js`
 
 Work your way through other examples to explore supported functionality.
 
 ## Note on systems without X11
+
 If no X server is running, the module fails when attempting to obtain a D-Bus
 connection at `DBus.getBus()`. This can be remedied by setting two environment
 variables manually (the actual bus address might be different):
 
-	process.env.DISPLAY = ':0';
-	process.env.DBUS_SESSION_BUS_ADDRESS = 'unix:path=/run/dbus/system_bus_socket';
-
+```javascript
+process.env.DISPLAY = ':0';
+process.env.DBUS_SESSION_BUS_ADDRESS = 'unix:path=/run/dbus/system_bus_socket';
+```
 
 ## API
 
@@ -83,7 +102,7 @@ bus or `"session"` to connect to the session bus.
 
 Returns a `Bus`.
 
-```
+```javascript
 var bus = DBus.getBus('session');
 ```
 
@@ -102,7 +121,7 @@ registered._
 
 Returns a `Service`.
 
-```
+```javascript
 var service = DBus.registerService('session', 'com.example.Library');
 ```
 
@@ -110,7 +129,7 @@ var service = DBus.registerService('session', 'com.example.Library');
 
 Create a new DBus instance.
 
-```
+```javascript
 var DBus = require('dbus')
 var dbus = new DBus()
 ```
@@ -140,7 +159,7 @@ Get an existing object's interface from a well-known service.
 Once retrieved, `callback` will be called with either an error or with an
 `Interface`.
 
-```
+```javascript
 bus.getInterface('com.example.Library', '/com/example/Library/authors/DAdams', 'com.example.Library.Author1', function(err, interface) {
     if (err) {
         ...
@@ -169,7 +188,7 @@ Get the value of a property.
 Once retrieved `callback` will be called with either an error or with the value
 of the property.
 
-```
+```javascript
 interface.getProperty('Name', function(err, name) {
 });
 ```
@@ -184,7 +203,7 @@ Set the value of a property.
 
 Once set `callback` will be called with either an error or nothing.
 
-```
+```javascript
 interface.setProperty('Name', 'Douglas Adams', function(err) {
 });
 ```
@@ -199,7 +218,7 @@ Once retrieved `callback` will be called with either an error or with an object
 where the keys are the names of the properties, and the values are the values
 of those properties.
 
-```
+```javascript
 interface.getProperties(function(err, properties) {
     console.log(properties.Name);
 });
@@ -219,7 +238,7 @@ Call a method on the interface.
 Once executed, `callback` will be called with either an error or with the
 result of the method call.
 
-```
+```javascript
 interface.AddBook("The Hitchhiker's Guide to the Galaxy", { timeout: 1000 }, function(err, result) {
 })
 ```
@@ -237,7 +256,7 @@ Create an object that is exposed over DBus.
 
 Returns a `ServiceObject`.
 
-```
+```javascript
 var object = service.createObject('/com/example/Library/authors/DAdams');
 ```
 
@@ -270,7 +289,7 @@ Create an interface on an object.
 
 Returns a `ServiceInterface`.
 
-```
+```javascript
 var interface = object.createInterface('com.example.Library.Author1');
 ```
 
@@ -289,7 +308,7 @@ An interface for an object that is exposed over DBus.
 
 Add a method that can be called over DBus.
 
-```
+```javascript
 interface.addMethod('AddBook', {
 	in: [DBus.Define(String), DBus.Define(Number)],
 	out: [DBus.Define(Number)]
@@ -314,7 +333,7 @@ interface.addMethod('AddBook', {
 
 Add a property that can be get, and/or optionally set, over DBus.
 
-```
+```javascript
 interface.addProperty('BooksWritten', {
   type: DBus.Define(Number),
   getter: function(callback) {
@@ -348,7 +367,7 @@ interface.addProperty('Name', {
 
 Create a DBus signal.
 
-```
+```javascript
 interface.addSignal('bookCreated', {
   types: [DBus.Define(Object)]
 });
@@ -361,7 +380,7 @@ interface.addSignal('bookCreated', {
 
 Emit a signal
 
-```
+```javascript
 interface.emit('bookCreated', { name: "The Hitchhiker's Guide to the Galaxy" })
 ```
 
@@ -383,7 +402,7 @@ A DBus-specific error
 
 Create a new error. The name must be a valid error name.
 
-```
+```javascript
 throw new DBus.Error('com.example.Library.Error.BookExistsError', 'The book already exists');
 ```
 
