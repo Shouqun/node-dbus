@@ -4,3 +4,4 @@ build
 *.swp
 *.node
 node_modules
+.idea

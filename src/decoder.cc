@@ -56,7 +56,7 @@ namespace Decoder {
 
 		case DBUS_TYPE_STRUCT:
 		{
-			char *sig = NULL;
+			char *sig = nullptr;
 
 			// Create a object
 			Local<Object> result = Nan::New<Object>();
@@ -95,7 +95,7 @@ namespace Decoder {
 		case DBUS_TYPE_ARRAY:
 		{
 			bool is_dict = false;
-			char *sig = NULL;
+			char *sig = nullptr;
 			DBusMessageIter internal_iter;
 
 			// Initializing signature
@@ -180,7 +180,7 @@ namespace Decoder {
 
 		case DBUS_TYPE_VARIANT:
 		{
-			char *sig = NULL;
+			char *sig = nullptr;
 			DBusMessageIter internal_iter;
 			dbus_message_iter_recurse(iter, &internal_iter);
 
@@ -215,7 +215,7 @@ namespace Decoder {
 
 		Local<Array> result = Nan::New<Array>();
 		unsigned int count = 0;
-		char *signature = NULL;
+		char *signature = nullptr;
 		Local<Value> value;
 
 		do {
@@ -254,7 +254,7 @@ namespace Decoder {
 			return scope.Escape(result);
 
 		unsigned int count = 0;
-		char *signature = NULL;
+		char *signature = nullptr;
 
 		do {
 			signature = dbus_message_iter_get_signature(&iter);

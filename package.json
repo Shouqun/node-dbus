@@ -5,7 +5,8 @@
   "author": "Shouqun Liu <liushouqun@gmail.com>",
   "contributors": [
     "Fred Chien <cfsghost@gmail.com>",
-    "Bryan Burgers <bryan@burgers.io>"
+    "Bryan Burgers <bryan@burgers.io>",
+    "Artem Derevnjuk <art_dere@hotmail.com>"
   ],
   "license": "MIT",
   "repository": {
@@ -17,8 +18,11 @@
   },
   "main": "./lib/dbus",
   "scripts": {
-    "install": "node-gyp configure build",
-    "test": "tap test/**/*.test.js"
+    "node-gyp": "node_modules/.bin/node-gyp",
+    "install": "npm run build:release",
+    "test": "tap test/**/*.test.js",
+    "build:release": "node-gyp configure build",
+    "build:debug": "node-gyp configure build --debug"
   },
   "dependencies": {
     "nan": "^2.1.0"
@@ -27,6 +31,7 @@
     "!win32"
   ],
   "devDependencies": {
+    "node-gyp": "^3.6.2",
     "tap": "^10.0.2"
   }
 }

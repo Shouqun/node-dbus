@@ -37,7 +37,7 @@ namespace NodeDBus {
 
 		Local<Value> err = Nan::Null();
 		if (dbus_error_is_set(&error)) {
-			if (error.message != NULL) {
+			if (error.message != nullptr) {
 				Local<Value> createErrorParameters[] = {
 					Nan::New(error.name).ToLocalChecked(),
 					Nan::New(error.message).ToLocalChecked()
@@ -54,7 +54,7 @@ namespace NodeDBus {
 			dbus_error_free(&error);
 		} else if (dbus_message_get_type(reply_message) == DBUS_MESSAGE_TYPE_ERROR) {
 			dbus_set_error_from_message(&error, reply_message);
-			if (error.message != NULL) {
+			if (error.message != nullptr) {
 				Local<Value> createErrorParameters[] = {
 					Nan::New(error.name).ToLocalChecked(),
 					Nan::New(error.message).ToLocalChecked()
@@ -89,12 +89,12 @@ namespace NodeDBus {
 	{
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
 
-		data->pending = NULL;
+		data->pending = nullptr;
 		delete data;
 	}
 
 	NAN_METHOD(GetBus) {
-		DBusConnection *connection = NULL;
+		DBusConnection *connection = nullptr;
 		DBusError error;
 
 		dbus_error_init(&error);
@@ -113,7 +113,7 @@ namespace NodeDBus {
 			break;
 		}
 
-		if (connection == NULL) {
+		if (connection == nullptr) {
 			if (dbus_error_is_set(&error))
 				return Nan::ThrowError(error.message);
 			else
@@ -190,7 +190,7 @@ namespace NodeDBus {
 		dbus_free(interface_name);
 		dbus_free(method);
 
-		if (message == NULL)
+		if (message == nullptr)
 			return Nan::ThrowError("Failed to call method");
 
 		// Preparing method arguments
@@ -205,7 +205,7 @@ namespace NodeDBus {
 				dbus_message_iter_init_append(message, &iter); 
 
 				// Initializing signature
-				char *sig = NULL, *concrete_sig = NULL;
+				char *sig = nullptr, *concrete_sig = nullptr;
 				if (info[5]->IsObject())
 				{
 					Local<Object> obj(info[5]->ToObject());
@@ -227,7 +227,7 @@ namespace NodeDBus {
 					sig = strdup(*String::Utf8Value(info[5]->ToString()));
 				}
 				
-				if (concrete_sig == NULL) {
+				if (concrete_sig == nullptr) {
 					concrete_sig = strdup(sig);
 				}
 
@@ -276,13 +276,13 @@ namespace NodeDBus {
 		// Send message and call method
 		if (!info[8]->IsFunction()) {
 
-			dbus_connection_send(bus->connection, message, NULL);
+			dbus_connection_send(bus->connection, message, nullptr);
 
 		} else {
 
 			DBusPendingCall *pending;
 			if (!dbus_connection_send_with_reply(bus->connection, message, &pending, timeout) || !pending) {
-				if (message != NULL)
+				if (message != nullptr)
 					dbus_message_unref(message);
 
 				return Nan::ThrowError("Failed to call method: Out of Memory");
@@ -294,14 +294,14 @@ namespace NodeDBus {
 			data->callback = new Nan::Callback(info[8].As<Function>());
 			data->createError = new Nan::Callback(info[9].As<Function>());
 			if (!dbus_pending_call_set_notify(pending, method_callback, data, method_free)) {
-				if (message != NULL)
+				if (message != nullptr)
 					dbus_message_unref(message);
 
 				return Nan::ThrowError("Failed to call method: Out of Memory");
 			}
 		}
 
-		if (message != NULL)
+		if (message != nullptr)
 			dbus_message_unref(message);
 
 		dbus_connection_flush(bus->connection);

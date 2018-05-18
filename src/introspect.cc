@@ -2,7 +2,6 @@
 #include <node.h>
 #include <cstring>
 #include <expat.h>
-#include <dbus/dbus.h>
 #include <nan.h>
 
 #include "introspect.h"
@@ -17,7 +16,7 @@ namespace Introspect {
 	{
 		int i = 0;
 
-		while(attrs[i] != NULL) {
+		while(attrs[i] != nullptr) {
 
 			if (!strcasecmp(attrs[i], name))
 				return attrs[i+1];
@@ -150,9 +149,9 @@ namespace Introspect {
 		introspect_obj->current_class = INTROSPECT_NONE;
 
 		// Initializing XML parser
-		XML_Parser parser = XML_ParserCreate(NULL);
+		XML_Parser parser = XML_ParserCreate(nullptr);
 		XML_SetUserData(parser, introspect_obj);
-		XML_SetElementHandler(parser, StartElementHandler, NULL);
+		XML_SetElementHandler(parser, StartElementHandler, nullptr);
 
 		// Start to parse source
 		if (!XML_Parse(parser, source, strlen(source), true)) {

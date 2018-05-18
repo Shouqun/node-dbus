@@ -111,7 +111,7 @@ namespace Signal {
 		}
 
 		// Send out message
-		dbus_connection_send(bus->connection, message, NULL);
+		dbus_connection_send(bus->connection, message, nullptr);
 		dbus_connection_flush(bus->connection);
 		dbus_message_unref(message);
 
