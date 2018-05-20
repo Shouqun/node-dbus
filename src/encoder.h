@@ -17,11 +17,11 @@ namespace Encoder {
 	// a variant at the DBus interface level, but should only actually be encoded with
 	// the actual concrete type declared for the property.
 	//
-	// If the concrete type is NULL or the same as the main one, types of variant
+	// If the concrete type is nullptr or the same as the main one, types of variant
 	// elements will be inferred based on the V8 type (and, in the case of numbers,
 	// their values)
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter,
-		const DBusSignatureIter *siter, const DBusSignatureIter *concreteSiter = NULL);
+		const DBusSignatureIter *siter, const DBusSignatureIter *concreteSiter = nullptr);
 }
 
 #endif

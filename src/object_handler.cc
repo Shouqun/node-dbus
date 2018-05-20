@@ -116,7 +116,7 @@ namespace ObjectHandler {
 		dbus_bool_t ret = dbus_connection_try_register_object_path(bus->connection,
 			object_path,
 			&vtable,
-			NULL,
+			nullptr,
 			&error);
 		dbus_connection_flush(bus->connection);
 		dbus_free(object_path);
@@ -186,7 +186,7 @@ namespace ObjectHandler {
 		DBusMessage *error_message = dbus_message_new_error(message, name, msg);
 
 		// Send error message
-		dbus_connection_send(connection, error_message, NULL);
+		dbus_connection_send(connection, error_message, nullptr);
 		dbus_connection_flush(connection);
 
 		// Release
