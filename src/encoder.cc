@@ -149,8 +149,8 @@ namespace Encoder {
     }
 
     bool EncodeObject(Local<Value> value, DBusMessageIter *iter,
-                      const DBusSignatureIter *siter,
-                      const DBusSignatureIter *concreteSiter) {
+                      DBusSignatureIter *siter,
+                      DBusSignatureIter *concreteSiter) {
 
         Nan::HandleScope scope;
         int type;
@@ -166,6 +166,17 @@ namespace Encoder {
 
         // Get type of current value
         type = dbus_signature_iter_get_current_type(siter);
+
+        if (type != DBUS_TYPE_ARRAY && value->IsArray()) {
+            Local<Array> arrayData = Local<Array>::Cast(value);
+            for (unsigned int i = 0; i < arrayData->Length(); ++i) {
+                Local<Value> arrayItem = arrayData->Get(i);
+                if (!EncodeObject(arrayItem, iter, siter, concreteSiter))
+                    return false;
+                dbus_signature_iter_next(siter);
+            }
+            return true;
+        }
 
         switch (type) {
             case DBUS_TYPE_INVALID: {
@@ -456,9 +467,9 @@ namespace Encoder {
             }
 
         }
-
         return true;
     }
+
 
 }
 

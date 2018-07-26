@@ -21,7 +21,7 @@ namespace Encoder {
 	// elements will be inferred based on the V8 type (and, in the case of numbers,
 	// their values)
 	bool EncodeObject(Local<Value> value, DBusMessageIter *iter,
-		const DBusSignatureIter *siter, const DBusSignatureIter *concreteSiter = nullptr);
+		DBusSignatureIter *siter, DBusSignatureIter *concreteSiter = nullptr);
 }
 
 #endif
