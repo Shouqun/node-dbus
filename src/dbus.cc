@@ -21,6 +21,8 @@ namespace NodeDBus {
 		DBusError error;
 		DBusMessage *reply_message;
 		DBusAsyncData *data = static_cast<DBusAsyncData *>(user_data);
+		Nan::HandleScope scope;
+		Nan::AsyncResource resource("node-dbus:callMethod");
 
 		dbus_error_init(&error);
 
@@ -32,9 +34,6 @@ namespace NodeDBus {
 		}
 		dbus_pending_call_unref(pending);
 
-		// Get current context from V8
-		Nan::HandleScope scope;
-
 		Local<Value> err = Nan::Null();
 		if (dbus_error_is_set(&error)) {
 			if (error.message != nullptr) {
@@ -42,14 +41,14 @@ namespace NodeDBus {
 					Nan::New(error.name).ToLocalChecked(),
 					Nan::New(error.message).ToLocalChecked()
 				};
-				err = data->createError->Call(2, createErrorParameters);
+				err = data->createError->Call(2, createErrorParameters, &resource).ToLocalChecked();
 			}
 			else {
 				Local<Value> createErrorParameters[] = {
 					Nan::New(error.name).ToLocalChecked(),
 					Nan::Undefined()
 				};
-				err = data->createError->Call(2, createErrorParameters);
+				err = data->createError->Call(2, createErrorParameters, &resource).ToLocalChecked();
 			}
 			dbus_error_free(&error);
 		} else if (dbus_message_get_type(reply_message) == DBUS_MESSAGE_TYPE_ERROR) {
@@ -59,14 +58,14 @@ namespace NodeDBus {
 					Nan::New(error.name).ToLocalChecked(),
 					Nan::New(error.message).ToLocalChecked()
 				};
-				err = data->createError->Call(2, createErrorParameters);
+				err = data->createError->Call(2, createErrorParameters, &resource).ToLocalChecked();
 			}
 			else {
 				Local<Value> createErrorParameters[] = {
 					Nan::New(error.name).ToLocalChecked(),
 					Nan::Undefined()
 				};
-				err = data->createError->Call(2, createErrorParameters);
+				err = data->createError->Call(2, createErrorParameters, &resource).ToLocalChecked();
 			}
 			dbus_error_free(&error);
 		}
@@ -82,7 +81,7 @@ namespace NodeDBus {
 		dbus_message_unref(reply_message);
 
 		// Invoke
-		data->callback->Call(2, info);
+		data->callback->Call(2, info, &resource);
 	}
 
 	static void method_free(void *user_data)
