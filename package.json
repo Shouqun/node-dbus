@@ -33,6 +33,6 @@
   ],
   "devDependencies": {
     "node-gyp": "^3.6.2",
-    "tap": "^10.0.2"
+    "tap": "^12.6.0"
   }
 }
