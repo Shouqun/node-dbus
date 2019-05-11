@@ -32,7 +32,7 @@
     "!win32"
   ],
   "devDependencies": {
-    "node-gyp": "^3.6.2",
-    "tap": "^12.6.0"
+    "node-gyp": "^4.0.0",
+    "tap": "^13.1.8"
   }
 }
