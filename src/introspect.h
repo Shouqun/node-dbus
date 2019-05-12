@@ -3,27 +3,27 @@
 
 namespace Introspect {
 
-	using namespace node;
-	using namespace v8;
-	using namespace std;
+using namespace node;
+using namespace v8;
+using namespace std;
 
-	typedef enum {
-		INTROSPECT_NONE,
-		INTROSPECT_ROOT,
-		INTROSPECT_METHOD,
-		INTROSPECT_PROPERTY,
-		INTROSPECT_SIGNAL
-	} IntrospectClass;
+typedef enum {
+  INTROSPECT_NONE,
+  INTROSPECT_ROOT,
+  INTROSPECT_METHOD,
+  INTROSPECT_PROPERTY,
+  INTROSPECT_SIGNAL
+} IntrospectClass;
 
-	typedef struct {
-		Nan::Persistent<Object> obj;
-		Nan::Persistent<Object> current_interface;
-		Nan::Persistent<Object> current_method;
-		Nan::Persistent<Array> current_signal;
-		IntrospectClass current_class;
-	} IntrospectObject;
+typedef struct {
+  Nan::Persistent<Object> obj;
+  Nan::Persistent<Object> current_interface;
+  Nan::Persistent<Object> current_method;
+  Nan::Persistent<Array> current_signal;
+  IntrospectClass current_class;
+} IntrospectObject;
 
-	Local<Value> CreateObject(const char *source);
-}
+Local<Value> CreateObject(const char* source);
+}  // namespace Introspect
 
 #endif
