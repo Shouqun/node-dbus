@@ -3,13 +3,13 @@
 
 namespace Signal {
 
-	using namespace node;
-	using namespace v8;
-	using namespace std;
+using namespace node;
+using namespace v8;
+using namespace std;
 
-	void DispatchSignal(Local<Value> info[]);
-	NAN_METHOD(EmitSignal);
-	NAN_METHOD(SetSignalHandler);
-}
+void DispatchSignal(Local<Value> info[]);
+NAN_METHOD(EmitSignal);
+NAN_METHOD(SetSignalHandler);
+}  // namespace Signal
 
 #endif

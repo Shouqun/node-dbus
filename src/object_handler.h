@@ -3,15 +3,15 @@
 
 namespace ObjectHandler {
 
-	using namespace node;
-	using namespace v8;
-	using namespace std;
+using namespace node;
+using namespace v8;
+using namespace std;
 
-	NAN_METHOD(RegisterObjectPath);
-	NAN_METHOD(UnregisterObjectPath);
-	NAN_METHOD(SendMessageReply);
-	NAN_METHOD(SendErrorMessageReply);
-	NAN_METHOD(SetObjectHandler);
-}
+NAN_METHOD(RegisterObjectPath);
+NAN_METHOD(UnregisterObjectPath);
+NAN_METHOD(SendMessageReply);
+NAN_METHOD(SendErrorMessageReply);
+NAN_METHOD(SetObjectHandler);
+}  // namespace ObjectHandler
 
 #endif

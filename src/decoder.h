@@ -3,12 +3,12 @@
 
 namespace Decoder {
 
-	using namespace node;
-	using namespace v8;
-	using namespace std;
+using namespace node;
+using namespace v8;
+using namespace std;
 
-	Local<Value> DecodeMessage(DBusMessage *message);
-	Local<Value> DecodeArguments(DBusMessage *message);
-}
+Local<Value> DecodeMessage(DBusMessage* message);
+Local<Value> DecodeArguments(DBusMessage* message);
+}  // namespace Decoder
 
 #endif
