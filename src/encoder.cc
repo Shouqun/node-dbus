@@ -16,7 +16,7 @@ using namespace std;
 
 bool IsByte(Local<Value>& value, const char* sig = nullptr) {
   if (value->IsUint32()) {
-    int number = value->Int32Value();
+    int number = value->Int32Value(Nan::GetCurrentContext()).FromJust();
     if (number >= 0 && number <= 255) {
       return true;
     }
@@ -182,7 +182,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
       break;
     }
     case DBUS_TYPE_BOOLEAN: {
-      auto data = static_cast<dbus_bool_t>(value->BooleanValue());
+      auto data = static_cast<dbus_bool_t>(
+          value->BooleanValue(Nan::GetCurrentContext()).FromJust());
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode boolean value\n");
@@ -193,7 +194,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
     }
 
     case DBUS_TYPE_BYTE: {
-      auto data = static_cast<uint8_t>(value->IntegerValue());
+      auto data = static_cast<uint8_t>(
+          value->IntegerValue(Nan::GetCurrentContext()).FromJust());
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode numeric value\n");
@@ -204,7 +206,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
     }
 
     case DBUS_TYPE_INT16: {
-      auto data = static_cast<dbus_int16_t>(value->IntegerValue());
+      auto data = static_cast<dbus_int16_t>(
+          value->IntegerValue(Nan::GetCurrentContext()).FromJust());
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode numeric value\n");
@@ -215,7 +218,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
     }
 
     case DBUS_TYPE_UINT16: {
-      auto data = static_cast<dbus_uint16_t>(value->IntegerValue());
+      auto data = static_cast<dbus_uint16_t>(
+          value->IntegerValue(Nan::GetCurrentContext()).FromJust());
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode numeric value\n");
@@ -226,7 +230,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
     }
 
     case DBUS_TYPE_INT32: {
-      dbus_int32_t data = value->Int32Value();
+      dbus_int32_t data =
+          value->Int32Value(Nan::GetCurrentContext()).FromJust();
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode numeric value\n");
@@ -238,7 +243,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
 
     case DBUS_TYPE_UNIX_FD:
     case DBUS_TYPE_UINT32: {
-      dbus_uint32_t data = value->Uint32Value();
+      dbus_uint32_t data =
+          value->Uint32Value(Nan::GetCurrentContext()).FromJust();
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode numeric value\n");
@@ -249,7 +255,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
     }
 
     case DBUS_TYPE_UINT64: {
-      auto data = static_cast<dbus_uint64_t>(value->IntegerValue());
+      auto data = static_cast<dbus_uint64_t>(
+          value->IntegerValue(Nan::GetCurrentContext()).FromJust());
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode numeric value\n");
@@ -260,7 +267,7 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
     }
 
     case DBUS_TYPE_DOUBLE: {
-      double data = value->NumberValue();
+      double data = value->NumberValue(Nan::GetCurrentContext()).FromJust();
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode double value\n");
@@ -273,7 +280,9 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
     case DBUS_TYPE_STRING:
     case DBUS_TYPE_OBJECT_PATH:
     case DBUS_TYPE_SIGNATURE: {
-      char* data = strdup(*String::Utf8Value(value->ToString()));
+      char* data = strdup(*String::Utf8Value(
+          v8::Isolate::GetCurrent(),
+          value->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         dbus_free(data);
@@ -312,10 +321,13 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
 
       // It's a dictionary
       if (dbus_signature_iter_get_element_type(siter) == DBUS_TYPE_DICT_ENTRY) {
-        Local<Object> value_object = value->ToObject();
+        Local<Object> value_object =
+            value->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
 
         // process each elements
-        Local<Array> prop_names = value_object->GetPropertyNames();
+        Local<Array> prop_names =
+            value_object->GetPropertyNames(Nan::GetCurrentContext()).
+                ToLocalChecked();
         unsigned int len = prop_names->Length();
 
         bool failed = false;
@@ -429,7 +441,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
       DBusMessageIter subIter;
       DBusSignatureIter structSiter, structConcreteSiter;
 
-      Local<Object> value_object = value->ToObject();
+      Local<Object> value_object =
+          value->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
 
       // Open array container to process elements in there
       if (!dbus_message_iter_open_container(iter, DBUS_TYPE_STRUCT, nullptr,
@@ -443,7 +456,9 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
       dbus_signature_iter_recurse(concreteSiter, &structConcreteSiter);
 
       // process each elements
-      Local<Array> prop_names = value_object->GetPropertyNames();
+      Local<Array> prop_names =
+          value_object->GetPropertyNames(Nan::GetCurrentContext()).
+              ToLocalChecked();
       unsigned int len = prop_names->Length();
 
       for (unsigned int i = 0; i < len; ++i) {

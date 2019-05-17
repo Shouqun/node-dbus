@@ -74,14 +74,21 @@ NAN_METHOD(EmitSignal) {
   }
 
   node_dbus::BusObject* bus = static_cast<node_dbus::BusObject*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+      Nan::GetInternalFieldPointer(info[0]->ToObject(
+          Nan::GetCurrentContext()).ToLocalChecked(), 0));
   DBusMessage* message;
   DBusMessageIter iter;
 
   // Create a signal
-  char* path = strdup(*String::Utf8Value(info[1]->ToString()));
-  char* interface = strdup(*String::Utf8Value(info[2]->ToString()));
-  char* signal = strdup(*String::Utf8Value(info[3]->ToString()));
+  char* path = strdup(*String::Utf8Value(
+      v8::Isolate::GetCurrent(),
+      info[1]->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
+  char* interface = strdup(*String::Utf8Value(
+      v8::Isolate::GetCurrent(),
+      info[2]->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
+  char* signal = strdup(*String::Utf8Value(
+      v8::Isolate::GetCurrent(),
+      info[3]->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
   message = dbus_message_new_signal(path, interface, signal);
 
   // Initializing error handler
@@ -97,7 +104,10 @@ NAN_METHOD(EmitSignal) {
     Local<Value> arg = arguments->Get(i);
     DBusSignatureIter siter;
 
-    char* sig = strdup(*String::Utf8Value(signatures->Get(i)->ToString()));
+    char* sig = strdup(*String::Utf8Value(
+        v8::Isolate::GetCurrent(),
+        signatures->Get(i)->
+            ToString(Nan::GetCurrentContext()).ToLocalChecked()));
     if (!dbus_signature_validate(sig, &error)) {
       return Nan::ThrowError(error.message);
     }

@@ -32,7 +32,8 @@ static DBusHandlerResult MessageHandler(DBusConnection* connection,
   object_template->SetInternalFieldCount(2);
 
   // Store connection and message
-  Local<Object> message_object = object_template->NewInstance();
+  Local<Object> message_object =
+      object_template->NewInstance(Nan::GetCurrentContext()).ToLocalChecked();
   Nan::SetInternalFieldPointer(message_object, 0, connection);
   Nan::SetInternalFieldPointer(message_object, 1, message);
 
@@ -107,7 +108,9 @@ NAN_METHOD(RegisterObjectPath) {
   }
 
   node_dbus::BusObject* bus = static_cast<node_dbus::BusObject*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+      Nan::GetInternalFieldPointer(
+        info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked(),
+        0));
 
   // Register object path
   char* object_path = strdup(*Nan::Utf8String(info[1]));
@@ -134,7 +137,8 @@ NAN_METHOD(UnregisterObjectPath) {
   }
 
   node_dbus::BusObject* bus = static_cast<node_dbus::BusObject*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+      Nan::GetInternalFieldPointer(
+          info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked(), 0));
 
   // Register object path
   char* object_path = strdup(*Nan::Utf8String(info[1]));
@@ -155,9 +159,11 @@ NAN_METHOD(SendMessageReply) {
   }
 
   DBusConnection* connection = static_cast<DBusConnection*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+      Nan::GetInternalFieldPointer(
+          info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked(), 0));
   DBusMessage* message = static_cast<DBusMessage*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 1));
+      Nan::GetInternalFieldPointer(
+          info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked(), 1));
 
   if (dbus_message_get_no_reply(message)) {
     return;
@@ -176,9 +182,11 @@ NAN_METHOD(SendErrorMessageReply) {
   }
 
   DBusConnection* connection = static_cast<DBusConnection*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
+      Nan::GetInternalFieldPointer(
+          info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked(), 0));
   DBusMessage* message = static_cast<DBusMessage*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 1));
+      Nan::GetInternalFieldPointer(
+          info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked(), 1));
 
   // Getting error message from arguments
   char* name = strdup(*Nan::Utf8String(info[1]));
