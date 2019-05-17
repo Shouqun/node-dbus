@@ -26,7 +26,7 @@
     "build:debug": "node-gyp configure build --debug"
   },
   "dependencies": {
-    "nan": "^2.1.0"
+    "nan": "^2.13.2"
   },
   "os": [
     "!win32"

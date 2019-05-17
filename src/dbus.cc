@@ -93,7 +93,7 @@ NAN_METHOD(GetBus) {
     return Nan::ThrowError("First parameter must be an integer");
 
   // Create connection
-  switch (info[0]->IntegerValue()) {
+  switch (info[0]->IntegerValue(Nan::GetCurrentContext()).ToChecked()) {
     case NODE_DBUS_BUS_SYSTEM:
       connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
       break;
@@ -116,13 +116,16 @@ NAN_METHOD(GetBus) {
 
   // Create bus object
   BusObject* bus = new BusObject;
-  bus->type = static_cast<BusType>(info[0]->IntegerValue());
+  bus->type = static_cast<BusType>(info[0]->IntegerValue(
+        Nan::GetCurrentContext()).ToChecked());
   bus->connection = connection;
 
   // Create a JavaScript object to store bus object
-  Local<Object> bus_object = object_template->NewInstance();
+  Local<Object> bus_object =
+      object_template->NewInstance(Nan::GetCurrentContext()).ToLocalChecked();
   Nan::SetInternalFieldPointer(bus_object, 0, bus);
   bus_object->Set(
+      Nan::GetCurrentContext(),
       Nan::New("uniqueName").ToLocalChecked(),
       Nan::New<String>(dbus_bus_get_unique_name(connection)).ToLocalChecked());
 
@@ -133,7 +136,8 @@ NAN_METHOD(GetBus) {
 }
 
 NAN_METHOD(ReleaseBus) {
-  Local<Object> bus_object = info[0]->ToObject();
+  Local<Object> bus_object =
+      info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
   // BusObject *bus = static_cast<BusObject
   // *>(External::Unwrap(bus_object->GetInternalField(0)));
   BusObject* bus =
@@ -155,13 +159,15 @@ NAN_METHOD(CallMethod) {
     return Nan::ThrowError("Require createError function");
 
   int timeout = -1;
-  if (info[6]->IsInt32()) timeout = info[6]->Int32Value();
+  if (info[6]->IsInt32())
+    timeout = info[6]->Int32Value(Nan::GetCurrentContext()).FromJust();
 
   // Get bus from internal field
   if (!info[0]->IsObject())
     return Nan::ThrowError("First argument must be an object");
 
-  Local<Object> bus_object = info[0]->ToObject();
+  Local<Object> bus_object =
+      info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
   BusObject* bus =
       static_cast<BusObject*>(Nan::GetInternalFieldPointer(bus_object, 0));
 
@@ -202,11 +208,15 @@ NAN_METHOD(CallMethod) {
       // Initializing signature
       char *sig = nullptr, *concrete_sig = nullptr;
       if (info[5]->IsObject()) {
-        Local<Object> obj(info[5]->ToObject());
+        Local<Object> obj(
+            info[5]->ToObject(Nan::GetCurrentContext()).ToLocalChecked());
 
         Local<Value> typeKey(Nan::New("type").ToLocalChecked());
         Nan::MaybeLocal<Value> mb_sig(Nan::Get(obj, typeKey));
-        sig = strdup(*String::Utf8Value(mb_sig.ToLocalChecked()->ToString()));
+        sig = strdup(*String::Utf8Value(
+              v8::Isolate::GetCurrent(),
+              mb_sig.ToLocalChecked()->ToString(
+                  Nan::GetCurrentContext()).ToLocalChecked()));
 
         Local<Value> concreteTypeKey(
             Nan::New("concrete_type").ToLocalChecked());
@@ -214,10 +224,15 @@ NAN_METHOD(CallMethod) {
         Local<Value> concrete_sig_value;
         if (mb_concrete_sig.ToLocal(&concrete_sig_value)) {
           concrete_sig =
-              strdup(*String::Utf8Value(concrete_sig_value->ToString()));
+              strdup(*String::Utf8Value(
+                  v8::Isolate::GetCurrent(),
+                  concrete_sig_value->
+                      ToString(Nan::GetCurrentContext()).ToLocalChecked()));
         }
       } else {
-        sig = strdup(*String::Utf8Value(info[5]->ToString()));
+        sig = strdup(*String::Utf8Value(
+              v8::Isolate::GetCurrent(),
+              info[5]->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
       }
 
       if (concrete_sig == nullptr) {
@@ -241,7 +256,8 @@ NAN_METHOD(CallMethod) {
             dbus_signature_iter_get_signature(&concrete_siter);
 
         DBusSignatureIter item_siter, item_concrete_siter;
-        Local<Value> arg = argument_arr->Get(i);
+        Local<Value> arg =
+            argument_arr->Get(Nan::GetCurrentContext(), i).ToLocalChecked();
 
         dbus_signature_iter_init(&item_siter, arg_sig);
         dbus_signature_iter_init(&item_concrete_siter, arg_concrete_sig);
@@ -312,8 +328,12 @@ NAN_METHOD(RequestName) {
   }
 
   BusObject* bus = static_cast<BusObject*>(
-      Nan::GetInternalFieldPointer(info[0]->ToObject(), 0));
-  char* service_name = strdup(*String::Utf8Value(info[1]->ToString()));
+      Nan::GetInternalFieldPointer(
+          info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked(), 0));
+  char* service_name = strdup(
+      *String::Utf8Value(
+          v8::Isolate::GetCurrent(),
+          info[1]->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
 
   dbus_error_init(&error);
 
@@ -335,7 +355,9 @@ NAN_METHOD(ParseIntrospectSource) {
   if (!info[0]->IsString()) {
     info.GetReturnValue().Set(Nan::Null());
   } else {
-    char* src = strdup(*String::Utf8Value(info[0]->ToString()));
+    char* src = strdup(*String::Utf8Value(
+        v8::Isolate::GetCurrent(),
+        info[0]->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
 
     Local<Value> obj = Introspect::CreateObject(src);
 
@@ -348,8 +370,11 @@ NAN_METHOD(ParseIntrospectSource) {
 NAN_METHOD(AddSignalFilter) {
   DBusError error;
 
-  Local<Object> bus_object = info[0]->ToObject();
-  char* rule_str = strdup(*String::Utf8Value(info[1]->ToString()));
+  Local<Object> bus_object =
+      info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
+  char* rule_str = strdup(*String::Utf8Value(
+      v8::Isolate::GetCurrent(),
+      info[1]->ToString(Nan::GetCurrentContext()).ToLocalChecked()));
 
   BusObject* bus =
       static_cast<BusObject*>(Nan::GetInternalFieldPointer(bus_object, 0));
@@ -372,13 +397,15 @@ NAN_METHOD(AddSignalFilter) {
 }
 
 NAN_METHOD(SetMaxMessageSize) {
-  Local<Object> bus_object = info[0]->ToObject();
+  Local<Object> bus_object =
+      info[0]->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
 
   BusObject* bus =
       static_cast<BusObject*>(Nan::GetInternalFieldPointer(bus_object, 0));
 
-  dbus_connection_set_max_message_size(bus->connection,
-                                       info[1]->ToInteger()->Value());
+  dbus_connection_set_max_message_size(
+      bus->connection,
+      info[1]->ToInteger(Nan::GetCurrentContext()).ToLocalChecked()->Value());
   dbus_connection_flush(bus->connection);
 
   return;
