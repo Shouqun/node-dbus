@@ -5,6 +5,7 @@ node-dbus is a D-Bus binding for Node.js.
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](#license)
 ![GitHub contributors](https://img.shields.io/github/contributors/shouqun/node-dbus.svg)
 ![GitHub last commit](https://img.shields.io/github/last-commit/shouqun/node-dbus.svg)
+![npm](https://img.shields.io/npm/dm/dbus.svg)
 
 ## Installation
 
