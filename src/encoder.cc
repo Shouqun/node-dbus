@@ -66,7 +66,8 @@ typedef bool (*CheckTypeCallback)(Local<Value>& value, const char* sig);
 bool CheckArrayItems(Local<Array>& array, CheckTypeCallback checkType,
                      const char* sig = nullptr) {
   for (unsigned int i = 0; i < array->Length(); ++i) {
-    Local<Value> arrayItem = array->Get(i);
+    Local<Value> arrayItem =
+        array->Get(Nan::GetCurrentContext(), i).ToLocalChecked();
     if (!checkType(arrayItem, sig)) return false;
   }
   return true;
@@ -128,7 +129,9 @@ string GetSignatureFromV8Type(Local<Value>& value) {
     }
     if (CheckArrayItems(arrayData, IsArray)) {
       Local<Value> lastArrayItem =
-          arrayData->Get(static_cast<uint32_t>(arrayDataLength - 1));
+          arrayData->Get(
+              Nan::GetCurrentContext(),
+              static_cast<uint32_t>(arrayDataLength - 1)).ToLocalChecked();
       string lastArrayItemSig = GetSignatureFromV8Type(lastArrayItem);
 
       if (CheckArrayItems(arrayData, HasSameSig, lastArrayItemSig.c_str())) {
@@ -182,8 +185,9 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
       break;
     }
     case DBUS_TYPE_BOOLEAN: {
-      auto data = static_cast<dbus_bool_t>(
-          value->BooleanValue(Nan::GetCurrentContext()).FromJust());
+      Local<Boolean> boolean_value =
+          value->ToBoolean(v8::Isolate::GetCurrent());
+      auto data = static_cast<dbus_bool_t>(boolean_value->Value());
 
       if (!dbus_message_iter_append_basic(iter, type, &data)) {
         printf("Failed to encode boolean value\n");
@@ -336,8 +340,10 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
           DBusMessageIter dict_iter;
 
           // Getting the key and value
-          Local<Value> prop_key = prop_names->Get(i);
-          Local<Value> prop_value = value_object->Get(prop_key);
+          Local<Value> prop_key =
+              prop_names->Get(Nan::GetCurrentContext(), i).ToLocalChecked();
+          Local<Value> prop_value =
+              value_object->Get(Nan::GetCurrentContext(),prop_key).ToLocalChecked();
 
           if (IsNullOrUndefined(prop_value) || IsNullOrUndefined(prop_key)) {
             continue;
@@ -394,7 +400,8 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
       // process each elements
       Local<Array> arrayData = Local<Array>::Cast(value);
       for (unsigned int i = 0; i < arrayData->Length(); ++i) {
-        Local<Value> arrayItem = arrayData->Get(i);
+        Local<Value> arrayItem =
+            arrayData->Get(Nan::GetCurrentContext(), i).ToLocalChecked();
         if (!EncodeObject(arrayItem, &subIter, &arraySiter,
                           &arrayConcreteSiter))
           break;
@@ -462,9 +469,12 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
       unsigned int len = prop_names->Length();
 
       for (unsigned int i = 0; i < len; ++i) {
-        Local<Value> prop_key = prop_names->Get(i);
+        Local<Value> prop_key =
+            prop_names->Get(Nan::GetCurrentContext(), i).ToLocalChecked();
+        Local<Value> prop_value =
+            value_object->Get(Nan::GetCurrentContext(), prop_key).ToLocalChecked();
 
-        if (!EncodeObject(value_object->Get(prop_key), &subIter, &structSiter,
+        if (!EncodeObject(prop_value, &subIter, &structSiter,
                           &structConcreteSiter)) {
           printf("Failed to encode element of dictionary\n");
           return false;

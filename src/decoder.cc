@@ -81,7 +81,7 @@ Local<Value> DecodeMessageIter(DBusMessageIter* iter, const char* signature) {
         }
 
         // Append a property
-        result->Set(key, value);
+        result->Set(Nan::GetCurrentContext(), key, value);
 
       } while (dbus_message_iter_next(iter));
 
@@ -143,7 +143,7 @@ Local<Value> DecodeMessageIter(DBusMessageIter* iter, const char* signature) {
           }
 
           // Append a property
-          result->Set(key, value);
+          result->Set(Nan::GetCurrentContext(), key, value);
 
         } while (dbus_message_iter_next(&internal_iter));
 
@@ -164,7 +164,7 @@ Local<Value> DecodeMessageIter(DBusMessageIter* iter, const char* signature) {
         if (value->IsUndefined()) continue;
 
         // Append item
-        result->Set(count, value);
+        result->Set(Nan::GetCurrentContext(), count, value);
 
         count++;
       } while (dbus_message_iter_next(&internal_iter));
@@ -214,7 +214,7 @@ Local<Value> DecodeMessage(DBusMessage* message) {
     dbus_free(signature);
     if (value->IsUndefined()) continue;
 
-    result->Set(count, value);
+    result->Set(Nan::GetCurrentContext(), count, value);
 
     count++;
   } while (dbus_message_iter_next(&iter));
@@ -249,7 +249,7 @@ Local<Value> DecodeArguments(DBusMessage* message) {
     dbus_free(signature);
     if (value->IsUndefined()) continue;
 
-    result->Set(count, value);
+    result->Set(Nan::GetCurrentContext(), count, value);
 
     count++;
   } while (dbus_message_iter_next(&iter));

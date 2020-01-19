@@ -40,11 +40,18 @@ static void StartElementHandler(void* user_data, const XML_Char* name,
 
     // Create a new object for interface
     Local<Object> interface = Nan::New<Object>();
-    interface->Set(Nan::New("method").ToLocalChecked(), Nan::New<Object>());
-    interface->Set(Nan::New("property").ToLocalChecked(), Nan::New<Object>());
-    interface->Set(Nan::New("signal").ToLocalChecked(), Nan::New<Object>());
+    interface->Set(Nan::GetCurrentContext(),
+                   Nan::New("method").ToLocalChecked(),
+                   Nan::New<Object>());
+    interface->Set(Nan::GetCurrentContext(),
+                   Nan::New("property").ToLocalChecked(),
+                   Nan::New<Object>());
+    interface->Set(Nan::GetCurrentContext(),
+                   Nan::New("signal").ToLocalChecked(),
+                   Nan::New<Object>());
 
-    obj->Set(Nan::New<String>(GetAttribute(attrs, "name")).ToLocalChecked(),
+    obj->Set(Nan::GetCurrentContext(),
+             Nan::New<String>(GetAttribute(attrs, "name")).ToLocalChecked(),
              interface);
 
     introspect_obj->current_interface.Reset();
@@ -52,16 +59,23 @@ static void StartElementHandler(void* user_data, const XML_Char* name,
 
   } else if (strcmp(name, "method") == 0) {
     Local<Object> interface = Nan::New(introspect_obj->current_interface);
-    Local<Object> method_class = Local<Object>::Cast(
-        interface->Get(Nan::New("method").ToLocalChecked()));
+    MaybeLocal<Value> maybe = interface->Get(
+        Nan::GetCurrentContext(), Nan::New("method").ToLocalChecked());
+    Local<Object> method_class = Local<Object>::Cast(maybe.ToLocalChecked());
 
     // Create a new object for this method
     Local<Object> method = Nan::New<Object>();
-    method->Set(Nan::New("in").ToLocalChecked(), Nan::New<Array>());
-    method->Set(Nan::New("out").ToLocalChecked(), Nan::New<Array>());
+    method->Set(Nan::GetCurrentContext(),
+                Nan::New("in").ToLocalChecked(),
+                Nan::New<Array>());
+    method->Set(Nan::GetCurrentContext(),
+                Nan::New("out").ToLocalChecked(),
+                Nan::New<Array>());
 
     method_class->Set(
-        Nan::New<String>(GetAttribute(attrs, "name")).ToLocalChecked(), method);
+        Nan::GetCurrentContext(),
+        Nan::New<String>(GetAttribute(attrs, "name")).ToLocalChecked(),
+        method);
 
     introspect_obj->current_class = INTROSPECT_METHOD;
 
@@ -70,31 +84,37 @@ static void StartElementHandler(void* user_data, const XML_Char* name,
 
   } else if (strcmp(name, "property") == 0) {
     Local<Object> interface = Nan::New(introspect_obj->current_interface);
-    Local<Object> property_class = Local<Object>::Cast(
-        interface->Get(Nan::New("property").ToLocalChecked()));
+    MaybeLocal<Value> maybe = interface->Get(
+        Nan::GetCurrentContext(), Nan::New("property").ToLocalChecked());
+    Local<Object> property_class = Local<Object>::Cast(maybe.ToLocalChecked());
 
     // Create a new object for this property
     Local<Object> method = Nan::New<Object>();
-    method->Set(Nan::New("type").ToLocalChecked(),
+    method->Set(Nan::GetCurrentContext(),
+                Nan::New("type").ToLocalChecked(),
                 Nan::New<String>(GetAttribute(attrs, "type")).ToLocalChecked());
     method->Set(
+        Nan::GetCurrentContext(),
         Nan::New("access").ToLocalChecked(),
         Nan::New<String>(GetAttribute(attrs, "access")).ToLocalChecked());
 
     property_class->Set(
+        Nan::GetCurrentContext(),
         Nan::New<String>(GetAttribute(attrs, "name")).ToLocalChecked(), method);
 
     introspect_obj->current_class = INTROSPECT_PROPERTY;
 
   } else if (strcmp(name, "signal") == 0) {
     Local<Object> interface = Nan::New(introspect_obj->current_interface);
-    Local<Object> signal_class = Local<Object>::Cast(
-        interface->Get(Nan::New("signal").ToLocalChecked()));
+    MaybeLocal<Value> maybe = interface->Get(
+        Nan::GetCurrentContext(), Nan::New("signal").ToLocalChecked());
+    Local<Object> signal_class = Local<Object>::Cast(maybe.ToLocalChecked());
 
     // Create a new object for this signal
     Local<Array> signal = Nan::New<Array>();
 
     signal_class->Set(
+        Nan::GetCurrentContext(),
         Nan::New<String>(GetAttribute(attrs, "name")).ToLocalChecked(), signal);
 
     introspect_obj->current_class = INTROSPECT_SIGNAL;
@@ -109,15 +129,19 @@ static void StartElementHandler(void* user_data, const XML_Char* name,
         Local<Object> method = Nan::New(introspect_obj->current_method);
 
         if (strcmp(GetAttribute(attrs, "direction"), "in") == 0) {
-          Local<Array> arguments =
-              Local<Array>::Cast(method->Get(Nan::New("in").ToLocalChecked()));
+          MaybeLocal<Value> maybe = method->Get(
+              Nan::GetCurrentContext(), Nan::New("in").ToLocalChecked());
+          Local<Array> arguments = Local<Array>::Cast(maybe.ToLocalChecked());
           arguments->Set(
+              Nan::GetCurrentContext(),
               arguments->Length(),
               Nan::New<String>(GetAttribute(attrs, "type")).ToLocalChecked());
         } else {
-          Local<Array> arguments =
-              Local<Array>::Cast(method->Get(Nan::New("out").ToLocalChecked()));
+          MaybeLocal<Value> maybe = method->Get(
+              Nan::GetCurrentContext(), Nan::New("out").ToLocalChecked());
+          Local<Array> arguments = Local<Array>::Cast(maybe.ToLocalChecked());
           arguments->Set(
+              Nan::GetCurrentContext(),
               arguments->Length(),
               Nan::New<String>(GetAttribute(attrs, "type")).ToLocalChecked());
         }
@@ -134,6 +158,7 @@ static void StartElementHandler(void* user_data, const XML_Char* name,
         Local<Array> signal = Nan::New(introspect_obj->current_signal);
 
         signal->Set(
+            Nan::GetCurrentContext(),
             signal->Length(),
             Nan::New<String>(GetAttribute(attrs, "type")).ToLocalChecked());
 
