@@ -101,12 +101,13 @@ NAN_METHOD(EmitSignal) {
   Local<Array> arguments = Local<Array>::Cast(info[4]);
   Local<Array> signatures = Local<Array>::Cast(info[5]);
   for (unsigned int i = 0; i < arguments->Length(); ++i) {
-    Local<Value> arg = arguments->Get(i);
+    Local<Value> arg = arguments->Get(
+        Nan::GetCurrentContext(), i).ToLocalChecked();
     DBusSignatureIter siter;
 
     char* sig = strdup(*String::Utf8Value(
         v8::Isolate::GetCurrent(),
-        signatures->Get(i)->
+        signatures->Get(Nan::GetCurrentContext(), i).ToLocalChecked()->
             ToString(Nan::GetCurrentContext()).ToLocalChecked()));
     if (!dbus_signature_validate(sig, &error)) {
       return Nan::ThrowError(error.message);
