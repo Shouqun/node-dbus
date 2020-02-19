@@ -258,6 +258,18 @@ bool EncodeObject(Local<Value> value, DBusMessageIter* iter,
       break;
     }
 
+    case DBUS_TYPE_INT64: {
+      auto data = static_cast<dbus_int64_t>(
+          value->IntegerValue(Nan::GetCurrentContext()).FromJust());
+
+      if (!dbus_message_iter_append_basic(iter, type, &data)) {
+        printf("Failed to encode numeric value\n");
+        return false;
+      }
+
+      break;
+    }
+
     case DBUS_TYPE_UINT64: {
       auto data = static_cast<dbus_uint64_t>(
           value->IntegerValue(Nan::GetCurrentContext()).FromJust());
