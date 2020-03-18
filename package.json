@@ -26,6 +26,7 @@
     "build:debug": "node-gyp configure build --debug"
   },
   "dependencies": {
+    "minimist": "^1.2.5",
     "nan": "^2.14.0"
   },
   "os": [
