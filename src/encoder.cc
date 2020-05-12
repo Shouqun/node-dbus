@@ -94,16 +94,16 @@ string GetSignatureFromV8Type(Local<Value>& value) {
   }
   if (IsString(value)) {
     // JR mods bellow this line .........................................
-    char* jrData = strdup(*String::Utf8Value(
-      v8::Isolate::GetCurrent(),
-      value->ToString(Nan::GetCurrentContext()).ToLocalChecked())
-    );
-    char jrFirstInitial = jrData[0];
-    char jrObjTest = '/';
-    if( jrFirstInitial == jrObjTest ) {
-      printf("Skipping Object path -> %s \n", jrData);
-      //return const_cast<char*>(DBUS_TYPE_OBJECT_PATH_AS_STRING);
-    }
+    // char* jrData = strdup(*String::Utf8Value(
+    //   v8::Isolate::GetCurrent(),
+    //   value->ToString(Nan::GetCurrentContext()).ToLocalChecked())
+    // );
+    // char jrFirstInitial = jrData[0];
+    // char jrObjTest = '/';
+    // if( jrFirstInitial == jrObjTest ) {
+    //   printf("Object path -> %s \n", jrData);
+    //   return const_cast<char*>(DBUS_TYPE_OBJECT_PATH_AS_STRING);
+    // }
     // JR mods above this line  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     return const_cast<char*>(DBUS_TYPE_STRING_AS_STRING);
   }
