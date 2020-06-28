@@ -56,34 +56,17 @@ Local<Value> DecodeMessageIter(DBusMessageIter* iter, const char* signature) {
       char* sig = nullptr;
 
       // Create a object
-      Local<Object> result = Nan::New<Object>();
-
+      Local<Array> result = Nan::New<Array>();
+      unsigned int count = 0;
+      DBusMessageIter dict_entry_iter;
+      dbus_message_iter_recurse(iter, &dict_entry_iter);
       do {
-        // Getting sub iterator
-        DBusMessageIter dict_entry_iter;
-        dbus_message_iter_recurse(iter, &dict_entry_iter);
-
-        // Getting key
-        sig = dbus_message_iter_get_signature(&dict_entry_iter);
-        Local<Value> key = DecodeMessageIter(&dict_entry_iter, sig);
-        dbus_free(sig);
-        if (key->IsUndefined()) continue;
-
-        // Try to get next element
-        Local<Value> value;
-        if (dbus_message_iter_next(&dict_entry_iter)) {
-          // Getting value
-          sig = dbus_message_iter_get_signature(&dict_entry_iter);
-          value = DecodeMessageIter(&dict_entry_iter, sig);
-          dbus_free(sig);
-        } else {
-          value = Nan::Undefined();
-        }
-
-        // Append a property
-        result->Set(Nan::GetCurrentContext(), key, value);
-
-      } while (dbus_message_iter_next(iter));
+         sig = dbus_message_iter_get_signature(&dict_entry_iter);
+         Local<Value> value = DecodeMessageIter(&dict_entry_iter, sig);
+         dbus_free(sig);
+         result->Set(count, value);
+         count++;
+      } while (dbus_message_iter_next(&dict_entry_iter));
 
       return scope.Escape(result);
     }
