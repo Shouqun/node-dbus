@@ -64,7 +64,7 @@ Local<Value> DecodeMessageIter(DBusMessageIter* iter, const char* signature) {
          sig = dbus_message_iter_get_signature(&dict_entry_iter);
          Local<Value> value = DecodeMessageIter(&dict_entry_iter, sig);
          dbus_free(sig);
-         result->Set(count, value);
+         result->Set(Nan::GetCurrentContext(), count, value);
          count++;
       } while (dbus_message_iter_next(&dict_entry_iter));
 
