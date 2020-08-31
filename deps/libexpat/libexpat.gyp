@@ -56,6 +56,8 @@
         'HAVE_EXPAT_CONFIG_H'
       ],
       'cflags': [
+        '-Wno-implicit-fallthrough',
+        '-Wno-unused-but-set-variable',
         '-Wno-missing-field-initializers'
       ],
       'xcode_settings': {

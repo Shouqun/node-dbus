@@ -25,8 +25,9 @@ void DispatchSignal(Local<Value> info[]) {
   if (!hookSignal) return;
 
   //		MakeCallback(handler, handler, 6, info);
-  Nan::MakeCallback(Nan::GetCurrentContext()->Global(), Nan::New(handler), 6,
-                    info);
+  Nan::AsyncResource asyncCB("signal-handler");
+  asyncCB.runInAsyncScope(Nan::GetCurrentContext()->Global(), Nan::New(handler), 
+                          6, info);
 }
 
 NAN_METHOD(SetSignalHandler) {
