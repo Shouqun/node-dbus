@@ -23,6 +23,7 @@
             'LIB_EXPAT=expat'
           ],
           'cflags': [
+            '-Wno-unused-result',
             '-std=gnu++0x',
             '<!@(pkg-config --cflags dbus-1)'
           ],
