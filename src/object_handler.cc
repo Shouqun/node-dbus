@@ -53,8 +53,9 @@ static DBusHandlerResult MessageHandler(DBusConnection* connection,
   if (!dbus_message_get_no_reply(message)) dbus_message_ref(message);
 
   // Invoke
-  Nan::MakeCallback(Nan::GetCurrentContext()->Global(), Nan::New(handler), 7,
-                    info);
+  Nan::AsyncResource asyncCB("message-handler");
+  asyncCB.runInAsyncScope(Nan::GetCurrentContext()->Global(), Nan::New(handler), 
+                          7, info);
 
   return DBUS_HANDLER_RESULT_HANDLED;
 }
@@ -115,7 +116,7 @@ NAN_METHOD(RegisterObjectPath) {
   // Register object path
   char* object_path = strdup(*Nan::Utf8String(info[1]));
   dbus_error_init(&error);
-  dbus_bool_t ret = dbus_connection_try_register_object_path(
+  dbus_connection_try_register_object_path(
       bus->connection, object_path, &vtable, nullptr, &error);
   dbus_connection_flush(bus->connection);
   dbus_free(object_path);
